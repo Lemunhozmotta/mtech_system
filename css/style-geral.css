@@ -1,0 +1,1261 @@
+/* =========================================================
+   M-TECH — BASE
+   ========================================================= */
+
+:root {
+    /* Cores da marca */
+    --mtech-yellow: #EBAF00;
+    --mtech-yellow-hover: #F5C21A;
+    --mtech-red: #D62D2D;
+    --mtech-red-hover: #E23E3E;
+    --mtech-white: #FEFEFE;
+
+    /* Cores de fundo */
+    --mtech-bg: #161616;
+    --mtech-card: #252424;
+    --mtech-card-trs: rgba(17, 17, 17, 0.75);
+
+    /* Cores de texto */
+    --mtech-text: #FEFEFE;
+    --mtech-text-muted: #48484A;
+
+    /* Extras */
+    --mtech-border: rgba(204, 204, 204, 0.15);
+
+    /* Estruturais */
+    --sidebar-largura: 200px;
+    --sidebar-altura: 55vh;
+    --sidebar-altura-recuo: 55vh;
+}
+
+html.light {
+    --mtech-bg: #E8E8E8;
+    --mtech-text: #1F1F1F;
+    --mtech-text-muted: #666666;
+    --mtech-card: #FEFEFE;
+    --mtech-border: rgba(31, 31, 31, 0.15);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--mtech-bg);
+    color: var(--mtech-text);
+    overflow-x: hidden;
+}
+
+body.gaveta-aberta {
+    overflow: hidden;
+}
+
+.evidencia {
+    color: var(--mtech-yellow);
+    font-weight: bold;
+}
+
+/* =========================================================
+   FAIXA LATERAL M-TECH
+   ========================================================= */
+.faixa-mtech {
+    position: fixed;
+    top: 0;
+    left: 40px;
+    width: 36px;
+    height: 100vh;
+    z-index: 9998;
+    pointer-events: none;
+    display: flex;
+    flex-direction: row;
+    isolation: isolate;
+}
+
+.faixa-mtech::before {
+    content: '';
+    width: 18px;
+    height: 100%;
+    background-color: var(--mtech-yellow);
+}
+
+.faixa-mtech::after {
+    content: '';
+    width: 18px;
+    height: 100%;
+    background-color: var(--mtech-red);
+}
+
+/* =========================================================
+   HEADER / SIDEBAR
+   ========================================================= */
+
+header.cabecalho {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--mtech-card-trs);
+    z-index: 10000;
+    transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.container-menu {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 20px;
+    transition: flex-direction 0.6s;
+    gap: 20px;
+}
+
+header img {
+    height: 40px;
+}
+
+.emergencia {
+    width: 100%;
+    background-color: #ff3333;
+    color: #ffffff;
+    text-align: center;
+    font-size: 12px;
+    padding: 5px 0;
+}
+
+.emergencia a {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.btn-contato {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: var(--mtech-red);
+    color: var(--mtech-white);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+    text-decoration: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.btn-contato:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px var(--mtech-red-hover);
+}
+
+.btn-tema {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--mtech-yellow);
+    border: 2px solid var(--mtech-yellow);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.btn-tema:hover {
+    background-color: var(--mtech-yellow);
+    color: var(--mtech-bg);
+    transform: scale(1.1) rotate(15deg);
+    box-shadow: 0 0 20px var(--mtech-yellow-hover);
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+    gap: 20px;
+    transition: flex-direction 0.6s;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: var(--mtech-text);
+    font-weight: 500;
+    padding-bottom: 6px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+nav ul li a.active {
+    color: var(--mtech-red);
+    border-bottom-color: var(--mtech-red);
+}
+
+nav ul li a:hover {
+    border-bottom-color: var(--mtech-red);
+}
+
+/* =========================================================
+   SIDEBAR (desktop)
+   ========================================================= */
+
+header.cabecalho.transformado {
+    top: 50%;
+    left: 40px;
+    transform: translateY(-50%);
+    width: var(--sidebar-largura);
+    height: var(--sidebar-altura);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    background-color: rgba(26, 26, 26, 0.95);
+    z-index: 10000;
+}
+
+header.cabecalho.transformado .emergencia {
+    opacity: 0;
+    visibility: hidden;
+    height: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+header.cabecalho.transformado .container-menu {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100%;
+    padding: 0;
+    gap: 18px;
+}
+
+header.cabecalho.transformado #logoMtech {
+    order: 1;
+    margin-top: 5px;
+    height: 35px;
+}
+
+header.cabecalho.transformado .btn-tema {
+    order: 2;
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+    margin: 0;
+}
+
+header.cabecalho.transformado nav {
+    order: 3;
+    width: 100%;
+}
+
+header.cabecalho.transformado .btn-contato {
+    order: 4;
+    margin-top: 20px;
+}
+
+header.cabecalho.transformado nav ul {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 18px;
+    width: 100%;
+    padding: 0;
+}
+
+header.cabecalho.transformado nav ul li {
+    width: 100%;
+    text-align: center;
+    list-style: none;
+}
+
+header.cabecalho.transformado nav ul li a {
+    display: inline-block;
+    text-align: center;
+    font-size: 15px;
+}
+
+header.cabecalho.transformado.recuado {
+    height: var(--sidebar-altura-recuo);
+    margin-top: -50px;
+}
+
+header.cabecalho.transformado.recuado nav ul {
+    gap: 15px;
+}
+
+/* =========================================================
+   CARDS DE SERVIÇOS NO HERO
+   ========================================================= */
+.hero-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    max-width: 1100px;
+    width: 100%;
+}
+
+.hero-card {
+    display: flex;
+    flex-direction: column;
+    height: 220px;
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: var(--mtech-card-trs);
+}
+
+.hero-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(235, 22, 7, 0.527);
+}
+
+.hero-card::before {
+    content: '';
+    display: block;
+    height: 65%;
+    width: 100%;
+    background-image: inherit;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.hero-card:hover::before {
+    transform: scale(1.05);
+}
+
+.hero-card-titulo {
+    height: 35%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 0 15px;
+    color: var(--mtech-white);
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.3;
+    background-color: var(--mtech-card-trs);
+    position: relative;
+    z-index: 2;
+}
+
+/* =========================================================
+   CARDS HORIZONTAIS DE SERVIÇOS
+   Imagem 40% esquerda + texto 60% direita
+   ========================================================= */
+
+.servicos-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    max-width: 1100px;
+    margin: 40px auto 0;
+    width: 100%;
+}
+
+.servico-card {
+    display: flex;
+    flex-direction: row;
+    background-color: var(--mtech-card);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    min-height: 200px;
+    text-align: left;
+}
+
+.servico-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(235, 22, 7, 0.527);
+}
+
+.servico-card-img {
+    flex: 0 0 40%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 15px;
+}
+
+.servico-card-img::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.2) 60%, rgba(0, 0, 0, 0.1) 100%);
+    z-index: 1;
+}
+
+.servico-card-titulo {
+    position: relative;
+    z-index: 2;
+    color: var(--mtech-white);
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.3;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.servico-card-texto {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 20px 25px;
+    background-color: var(--mtech-card);
+}
+
+.servico-card-texto p {
+    color: var(--mtech-white);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    text-align: left;
+}
+
+/* =========================================================
+   RESPONSIVO DOS CARDS DE SERVIÇOS
+   ========================================================= */
+
+@media (max-width: 1100px) {
+    .servicos-cards {
+        grid-template-columns: 1fr;
+        max-width: 700px;
+    }
+}
+
+@media (max-width: 650px) {
+    .servico-card {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .servico-card-img {
+        flex: none;
+        height: 180px;
+    }
+
+    .servico-card-texto {
+        padding: 18px 20px;
+    }
+
+    .servico-card-texto p {
+        font-size: 13.5px;
+    }
+}
+
+/* =========================================================
+   SEÇÕES
+   ========================================================= */
+
+.secao-pagina {
+    width: 100%;
+    max-width: 70%;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 100px 40px 60px;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 5;
+    background-color: var(--mtech-bg);
+    scroll-margin-top: 0;
+}
+
+.secao-pagina.servicos {
+    align-items: flex-start;
+    padding-top: 80px;
+}
+
+.secao-pagina.hero {
+    background: url('../img/parallax-home.png') center top / cover no-repeat fixed !important;
+    padding-top: 140px;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    flex-direction: column;
+    gap: 30px;
+    padding-bottom: 40px;
+}
+
+.hero-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    background-color: var(--mtech-card-trs);
+    color: var(--mtech-white);
+    padding: 40px;
+    border-radius: 12px;
+    max-width: 1100px;
+    width: 100%;
+    margin-top: -40px;
+}
+
+.hero-content h1,
+.hero-content h3,
+.hero-content p {
+    color: var(--mtech-white);
+}
+
+.hero-text h1 {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.hero-text p {
+    margin-bottom: 20px;
+}
+
+.btn {
+    display: inline-block;
+    background-color: var(--mtech-red);
+    padding: 14px 24px;
+    border-radius: 8px;
+    color: var(--mtech-white);
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px var(--mtech-red-hover);
+}
+
+/* SOCORRO */
+.socorro {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+    padding-top: 140px;
+    padding-bottom: 60px;
+}
+
+.socorro-left {
+    padding: 20px;
+}
+
+.socorro-left img {
+    max-width: 80%;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+.socorro-right {
+    width: 100%;
+}
+
+/* =========================================================
+   PARALLAX
+   ========================================================= */
+
+.parallax {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #ffffff;
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    position: relative;
+    z-index: 1;
+}
+
+.parallax::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.parallax-content {
+    position: relative;
+    z-index: 2;
+    padding: 20px;
+}
+
+.parallax-content h1,
+.parallax-content p {
+    color: var(--mtech-white);
+}
+
+.bg-parallax-servicos {
+    background-image: url('../img/parallax-1.png');
+}
+
+.bg-parallax-sobre {
+    background-image: url('../img/parallax-2.png');
+}
+
+.bg-parallax-contato {
+    background-image: url('../img/parallax-3.png');
+}
+
+/* =========================================================
+   CONTEÚDO CENTRALIZADO
+   ========================================================= */
+
+.conteudo-centralizado {
+    max-width: 900px;
+    width: 100%;
+    text-align: center;
+}
+
+.conteudo-centralizado p {
+    margin-bottom: 15px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* =========================================================
+   COMPONENTES
+   ========================================================= */
+
+.card {
+    background: var(--mtech-card);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+h1,
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* =========================================================
+   PADRÃO ÚNICO DE CAMPOS (inputs, selects, textareas)
+   Vale para TODOS os formulários do site
+   ========================================================= */
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background-color: var(--mtech-bg);
+    color: var(--mtech-text);
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+    outline: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--mtech-red);
+    box-shadow: 0 0 0 3px rgba(214, 45, 45, 0.2);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--mtech-text-muted);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+#btnLocalizacao {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    background: #334155;
+    color: var(--mtech-white);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#btnLocalizacao:hover {
+    background: #475569;
+}
+
+#mapa {
+    display: none;
+    width: 100%;
+    height: 200px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+form button[type="submit"] {
+    width: 100%;
+    padding: 14px;
+    background: var(--mtech-red);
+    color: var(--mtech-white);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+form button[type="submit"]:hover {
+    background: var(--mtech-red-hover);
+}
+
+/* WHATSAPP */
+.whatsapp {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #25d366;
+    color: var(--mtech-white);
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 28px;
+    text-decoration: none;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    animation: pulse 1.5s infinite;
+    z-index: 999;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 15px rgba(37, 211, 102, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+    }
+}
+
+/* FOOTER */
+footer {
+    background-color: var(--mtech-card);
+    color: var(--mtech-text);
+    text-align: center;
+    padding: 30px 20px;
+    width: 100%;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
+}
+
+/* =========================================================
+   AJUSTES DO TEMA CLARO
+   ========================================================= */
+
+html.light header.cabecalho {
+    background-color: rgba(220, 220, 220, 0.85);
+}
+
+html.light nav ul li a {
+    color: #1F1F1F;
+}
+
+html.light nav ul li a:hover,
+html.light nav ul li a.active {
+    color: var(--mtech-red);
+}
+
+html.light header.cabecalho.transformado {
+    background-color: rgba(235, 175, 0, 0.95);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+html.light header.cabecalho.transformado nav ul li a {
+    color: #1F1F1F;
+}
+
+html.light header.cabecalho.transformado nav ul li a:hover,
+html.light header.cabecalho.transformado nav ul li a.active {
+    color: var(--mtech-red);
+    border-bottom-color: var(--mtech-red);
+}
+
+/* Botão de tema — PADRÃO para header E sidebar no tema claro */
+html.light header.cabecalho .btn-tema {
+    color: #1F1F1F;
+    border-color: #1F1F1F;
+}
+
+html.light header.cabecalho .btn-tema:hover {
+    background-color: #1F1F1F;
+    color: var(--mtech-yellow);
+    border-color: #1F1F1F;
+}
+
+html.light header.cabecalho.transformado .btn-contato {
+    background-color: var(--mtech-red);
+    color: var(--mtech-white);
+}
+
+html.light .emergencia {
+    background-color: var(--mtech-yellow);
+    color: #1F1F1F;
+}
+
+html.light .emergencia a {
+    color: #1F1F1F;
+    font-weight: 600;
+}
+
+html.light .secao-pagina.hero {
+    background: url('../img/parallax-home.png') center top / cover no-repeat fixed !important;
+}
+
+html.light .hero-content {
+    background-color: var(--mtech-card-trs);
+    color: var(--mtech-white);
+}
+
+html.light .hero-content h1,
+html.light .hero-content h3,
+html.light .hero-content p {
+    color: var(--mtech-white);
+}
+
+html.light .hero-content .btn {
+    color: var(--mtech-white);
+}
+
+html.light .secao-pagina {
+    color: var(--mtech-text);
+}
+
+html.light .conteudo-centralizado h2,
+html.light .conteudo-centralizado p {
+    color: var(--mtech-text);
+}
+
+html.light .parallax-content h1,
+html.light .parallax-content p {
+    color: var(--mtech-white);
+}
+
+html.light .card {
+    background-color: var(--mtech-card);
+    color: var(--mtech-text);
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.12);
+}
+
+html.light .card h1,
+html.light .card h2 {
+    color: var(--mtech-text);
+}
+
+/* Campos no tema claro — PADRÃO único */
+html.light input,
+html.light select,
+html.light textarea {
+    background-color: var(--mtech-bg);
+    color: var(--mtech-text);
+    border: 1px solid var(--mtech-border);
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+    color: var(--mtech-text-muted);
+}
+
+html.light footer {
+    background-color: var(--mtech-card);
+    color: var(--mtech-text);
+}
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 1676px) {
+    .secao-pagina {
+        margin-left: 280px;
+        margin-right: auto;
+        max-width: calc(100% - 320px);
+    }
+
+    .secao-pagina.hero {
+        margin-left: 0;
+        margin-right: 0;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 1400px) {
+    .secao-pagina {
+        margin-left: 260px;
+        max-width: calc(100% - 300px);
+    }
+}
+
+@media (max-width: 1100px) {
+
+    .hero-content,
+    .socorro {
+        grid-template-columns: 1fr;
+    }
+
+    .parallax-content {
+        margin-left: 260px;
+        margin-right: auto;
+        max-width: calc(100% - 300px);
+        padding-left: 0;
+        padding-right: 0;
+        width: auto;
+        text-align: center;
+    }
+
+    .hero-text h1 {
+        font-size: 32px;
+    }
+
+    .secao-pagina {
+        margin-left: 260px;
+        margin-right: auto;
+        max-width: calc(100% - 300px);
+        padding-top: 120px;
+    }
+
+    .secao-pagina.hero {
+        margin-left: 0;
+        margin-right: 0;
+        max-width: 100%;
+        padding-top: 160px;
+    }
+
+    .socorro {
+        padding-top: 120px;
+    }
+
+    header.cabecalho.transformado {
+        width: var(--sidebar-largura);
+        height: var(--sidebar-altura);
+    }
+
+    .hero-cards {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 600px;
+    }
+}
+
+@media (max-width: 650px) {
+
+    header.cabecalho.transformado {
+        top: 0;
+        left: 0;
+        transform: none;
+        width: 100%;
+        height: auto;
+        border-radius: 0;
+        padding: 0;
+        background-color: var(--mtech-card-trs);
+    }
+
+    header.cabecalho.transformado .container-menu {
+        flex-direction: row;
+        justify-content: space-between;
+        height: auto;
+        padding: 15px 20px;
+        gap: 10px;
+    }
+
+    header.cabecalho.transformado #logoMtech {
+        order: 0;
+        margin: 0;
+        height: 40px;
+    }
+
+    header.cabecalho.transformado .btn-tema {
+        order: 0;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    header.cabecalho.transformado nav {
+        order: 0;
+        width: auto;
+    }
+
+    header.cabecalho.transformado .btn-contato {
+        order: 0;
+    }
+
+    header.cabecalho.transformado nav ul {
+        flex-direction: row;
+        gap: 15px;
+        width: auto;
+    }
+
+    header.cabecalho.transformado nav ul li {
+        width: auto;
+    }
+
+    header.cabecalho.transformado .emergencia {
+        opacity: 1;
+        visibility: visible;
+        height: auto;
+        overflow: visible;
+    }
+
+    .secao-pagina {
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 100%;
+        padding: 160px 20px 40px;
+    }
+
+    .secao-pagina.hero {
+        max-width: 100%;
+        padding-top: 180px;
+    }
+
+    .socorro {
+        padding-top: 160px;
+    }
+
+    .parallax-content {
+        margin-left: 0;
+        margin-right: 0;
+        max-width: 100%;
+        padding: 20px;
+    }
+
+    .hero-cards {
+        display: none;
+    }
+}
+
+@media (max-width: 500px) {
+    .faixa-mtech {
+        display: none;
+    }
+
+    .secao-pagina {
+        padding: 160px 20px 40px;
+    }
+
+    .socorro {
+        padding-top: 140px;
+    }
+
+    .secao-pagina.hero {
+        padding-top: 180px;
+    }
+}
+
+/* =========================================================
+   FORMULÁRIO DE CONTATO
+   ========================================================= */
+
+.contato-container {
+    max-width: 700px;
+    margin: 30px auto 0;
+    width: 100%;
+}
+
+.contato-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.contato-header h1 {
+    font-size: 26px;
+    color: var(--mtech-text);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.contato-header h1 i {
+    color: var(--mtech-red);
+}
+
+.contato-header p {
+    font-size: 15px;
+    color: var(--mtech-text);
+    opacity: 0.85;
+    line-height: 1.6;
+}
+
+.form-contato {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background-color: var(--mtech-card);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.form-contato button[type="submit"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    background-color: var(--mtech-red);
+    color: var(--mtech-white);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    font-family: 'Poppins', sans-serif;
+}
+
+.form-contato button[type="submit"]:hover {
+    background-color: var(--mtech-red-hover);
+    transform: scale(1.02);
+    box-shadow: 0 0 20px var(--mtech-red-hover);
+}
+
+/* =========================================================
+   MENSAGEM DE SUCESSO
+   ========================================================= */
+
+.msg-sucesso {
+    display: none;
+    text-align: center;
+    padding: 40px 30px;
+    background-color: var(--mtech-card-trs);
+    border-radius: 12px;
+    border: 2px solid var(--mtech-red);
+    box-shadow: 0 0 30px rgba(235, 22, 7, 0.3);
+    animation: aparecerSucesso 0.5s ease;
+}
+
+.msg-sucesso.visivel {
+    display: block;
+}
+
+.msg-sucesso i {
+    font-size: 60px;
+    color: var(--mtech-red);
+    margin-bottom: 20px;
+    display: block;
+    animation: pulsarSucesso 1.5s ease infinite;
+}
+
+.msg-sucesso h3 {
+    font-size: 22px;
+    color: var(--mtech-yellow);
+    margin-bottom: 12px;
+}
+
+.msg-sucesso p {
+    font-size: 15px;
+    color: var(--mtech-text);
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+@keyframes aparecerSucesso {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulsarSucesso {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.08);
+    }
+}
+
+/* TEMA CLARO — CONTATO */
+html.light .form-contato {
+    background-color: var(--mtech-card);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+html.light .msg-sucesso {
+    background-color: var(--mtech-card-trs);
+}
+
+html.light .msg-sucesso p {
+    color: var(--mtech-white);
+}
+
+html.light .contato-header h1,
+html.light .contato-header p {
+    color: var(--mtech-text);
+}
+
+/* RESPONSIVO — CONTATO */
+@media (max-width: 650px) {
+    .form-contato {
+        padding: 22px 18px;
+        gap: 12px;
+    }
+
+    .contato-header h1 {
+        font-size: 22px;
+    }
+
+    .msg-sucesso {
+        padding: 30px 20px;
+    }
+
+    .msg-sucesso i {
+        font-size: 48px;
+    }
+
+    .msg-sucesso h3 {
+        font-size: 19px;
+    }
+}

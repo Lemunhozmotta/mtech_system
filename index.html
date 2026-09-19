@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <title>M-Teck Performance Automotive</title>
+  <link rel="stylesheet" href="css/style-geral.css">
+  <link rel="stylesheet" href="css/style-menu-burg.css">
+</head>
+
+<body>
+  <!-- =====================================================
+       FAIXA LATERAL DE IDENTIDADE VISUAL M-TECH
+       Fixa, sobre o fundo e o parallax, atrás das seções e da sidebar
+       ===================================================== -->
+  <div class="faixa-mtech" aria-hidden="true"></div>
+
+  <!-- =====================================================
+       HEADER
+       ===================================================== -->
+  <header class="cabecalho">
+    <div class="emergencia">
+      <p>Está precisando de Socorro? Chame agora mesmo no WhatsApp <a href="#">(11)91122-3344</a> Nossa Equipe
+        Especializada está pronta para seu atendimento!</p>
+    </div>
+
+    <div class="container-menu">
+      <img src="img/logo-br.png" alt="logo M-Teck" id="logoMtech">
+      <nav class="nav-desktop">
+        <ul>
+          <li><a href="#home">Início</a></li>
+          <li><a href="#socorro">Socorro Mecânico</a></li>
+          <li><a href="#servicos">Serviços</a></li>
+          <li><a href="#sobre">Sobre</a></li>
+          <li><a href="#contato">Contato</a></li>
+        </ul>
+      </nav>
+      <button class="btn-tema" id="btnTema" aria-label="Alternar tema">
+        <i class="fas fa-sun"></i>
+      </button>
+      <a href="#socorro" class="btn-contato btn-contato-desktop">
+        <i class="fas fa-truck-pickup"></i> S.O.S 24h
+      </a>
+
+      <div class="botoes-mobile-header">
+        <button class="btn-tema-header" id="btnTemaHeader" aria-label="Alternar tema">
+          <i class="fas fa-sun"></i>
+        </button>
+        <button class="btn-menu-header" id="btnMenuHeader" aria-label="Abrir menu">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Botões flutuantes mobile -->
+  <div class="mobile-flutuantes" id="mobileFlutuantes">
+    <button class="btn-menu-mobile" id="btnMenuMobile" aria-label="Abrir menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <button class="btn-tema-mobile" id="btnTemaMobile" aria-label="Alternar tema">
+      <i class="fas fa-sun"></i>
+    </button>
+  </div>
+
+  <!-- Overlay -->
+  <div class="overlay-mobile" id="overlayMobile"></div>
+
+  <!-- =====================================================
+    Gaveta lateral mobile 
+    ========================================================
+       -->
+  <aside class="gaveta-mobile" id="gavetaMobile">
+    <img src="img/logo-br.png" alt="logo M-Teck" id="logoMtechMobile">
+
+    <nav>
+      <ul>
+        <li><a href="#home">Início</a></li>
+        <li><a href="#socorro">Socorro Mecânico</a></li>
+        <li><a href="#servicos">Serviços</a></li>
+        <li><a href="#sobre">Sobre</a></li>
+        <li><a href="#contato">Contato</a></li>
+      </ul>
+    </nav>
+
+    <a href="#socorro" class="btn-contato btn-contato-mobile">
+      <i class="fas fa-truck-pickup"></i> S.O.S 24h
+    </a>
+
+  </aside>
+
+  <!-- =====================================================
+       HOME PARALLAX
+       ===================================================== -->
+  <section class="secao-pagina hero" id="home">
+    <!-- ===== CARD PRINCIPAL DA HOME ===== -->
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1>Performance e Confiança</h1>
+        <p>Especialistas em mecânica e auto socorro 24h.</p>
+        <a href="#socorro" class="btn">Solicitar Socorro</a>
+      </div>
+      <div class="hero-info">
+        <div>
+          <h3>Mecânica Completa</h3>
+          <p>Manutenção preventiva e corretiva com qualidade.</p>
+        </div>
+        <div>
+          <h3>Atendimento 24h</h3>
+          <p>Auto socorro rápido onde você estiver.</p>
+        </div>
+      </div>
+    </div>
+    <!-- ===== CARDS DE SERVIÇOS ===== -->
+    <div class="hero-cards">
+      <a href="#servicos" class="hero-card" style="background-image: url('img/injecao.png');">
+        <span class="hero-card-titulo">Injeção e<br>Ar Condicionado</span>
+      </a>
+
+      <a href="#servicos" class="hero-card" style="background-image: url('img/freio.png');">
+        <span class="hero-card-titulo">Suspensão e<br>Freios</span>
+      </a>
+
+      <a href="#servicos" class="hero-card" style="background-image: url('img/embreagem.png');">
+        <span class="hero-card-titulo">Embreagem e<br>Câmbio</span>
+      </a>
+
+      <a href="#servicos" class="hero-card" style="background-image: url('img/balanceamento.png');">
+        <span class="hero-card-titulo">Alinhamento e<br>Balanceamento</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       SOCORRO
+       ===================================================== -->
+  <section class="secao-pagina socorro" id="socorro">
+    <div class="socorro-left">
+      <h2>Auto Socorro 24h</h2>
+      <p>Atendimento rápido para emergências automotivas.</p>
+      <ul>
+        <li>🚗 Guincho</li>
+        <li>🔋 Bateria</li>
+        <li>🛞 Troca de pneu</li>
+        <li>⚡ Pane elétrica</li>
+      </ul>
+      <img src="img/guincho.png" alt="Guincho">
+    </div>
+    <div class="socorro-right">
+      <div class="card">
+        <h1>Solicitar Atendimento</h1>
+        <form id="form">
+          <input type="text" id="nome" placeholder="Seu nome" required>
+          <input type="tel" id="telefone" placeholder="Telefone" required>
+          <select id="servico" required>
+            <option value="">Tipo de serviço</option>
+            <option>Guincho</option>
+            <option>Pane elétrica</option>
+            <option>Troca de pneu</option>
+            <option>Bateria</option>
+          </select>
+          <input type="text" id="local" placeholder="Localização" required>
+          <button type="button" id="btnLocalizacao">📍 Usar minha localização</button>
+          <div id="mapa"></div>
+          <input type="datetime-local" id="data" required>
+          <button type="submit">Solicitar Atendimento</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       PARALLAX SERVIÇOS
+       ===================================================== -->
+  <div class="parallax bg-parallax-servicos">
+    <div class="parallax-content">
+      <h1>Serviços <span class="evidencia">Especializados</span>!</h1>
+      <p>Especialistas em mecânica e auto socorro 24h.</p>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SERVIÇOS
+       ===================================================== -->
+  <section class="secao-pagina servicos" id="servicos">
+    <div class="conteudo-centralizado">
+      <h2>Outros <span class="evidencia">Serviços</span>.</h2>
+      <p>Em breve mais informações...</p>
+
+      <!-- ===== CARDS HORIZONTAIS DE SERVIÇOS ===== -->
+      <div class="servicos-cards">
+
+        <!-- Card 1: Injeção e Ar Condicionado -->
+        <article class="servico-card">
+          <div class="servico-card-img" style="background-image: url('img/injecao.png');">
+            <span class="servico-card-titulo">Injeção e<br>Ar Condicionado</span>
+          </div>
+          <div class="servico-card-texto">
+            <p>Sistema de injeção eletrônica e ar condicionado automotivo com diagnóstico computadorizado. Recarga de
+              gás, higienização e manutenção completa para o conforto e desempenho do seu veículo.</p>
+          </div>
+        </article>
+
+        <!-- Card 2: Embreagem e Câmbio -->
+        <article class="servico-card">
+          <div class="servico-card-img" style="background-image: url('img/embreagem.png');">
+            <span class="servico-card-titulo">Embreagem e<br>Câmbio</span>
+          </div>
+          <div class="servico-card-texto">
+            <p>Troca de embreagem, revisão e reparo de câmbio manual e automático. Trabalhamos com peças de qualidade e
+              garantia, devolvendo a suavidade e a resposta original do seu carro.</p>
+          </div>
+        </article>
+
+        <!-- Card 3: Suspensão e Freios -->
+        <article class="servico-card">
+          <div class="servico-card-img" style="background-image: url('img/freio.png');">
+            <span class="servico-card-titulo">Suspensão e<br>Freios</span>
+          </div>
+          <div class="servico-card-texto">
+            <p>Manutenção completa de suspensão e sistema de freios: amortecedores, molas, pastilhas, discos e fluido.
+              Segurança e estabilidade para você e sua família em qualquer estrada.</p>
+          </div>
+        </article>
+
+        <!-- Card 4: Alinhamento e Balanceamento -->
+        <article class="servico-card">
+          <div class="servico-card-img" style="background-image: url('img/balanceamento.png');">
+            <span class="servico-card-titulo">Alinhamento e<br>Balanceamento</span>
+          </div>
+          <div class="servico-card-texto">
+            <p>Alinhamento de direção e balanceamento de rodas com equipamentos de precisão. Mais economia de pneus,
+              estabilidade na direção e conforto ao dirigir, com resultado garantido.</p>
+          </div>
+        </article>
+
+      </div>
+      <!-- ===== FIM DOS CARDS ===== -->
+
+    </div>
+  </section>
+
+  <!-- =====================================================
+       PARALLAX SOBRE
+       ===================================================== -->
+  <div class="parallax bg-parallax-sobre">
+    <div class="parallax-content">
+      <h1>Compromisso e <span class="evidencia">História</span></h1>
+      <p>Conheça a trajetória da M-Teck.</p>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SOBRE
+       ===================================================== -->
+  <section class="secao-pagina sobre" id="sobre">
+    <div class="conteudo-centralizado">
+      <h2>Nossa <span class="evidencia">História</span>.</h2>
+      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Asperiores consequuntur fugiat veniam quidem
+        accusantium eveniet. Debitis velit soluta dolorum? Exercitationem magni aut odit ipsum? Quisquam animi quae illo
+        delectus nam.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Odit praesentium sunt iusto similique dignissimos hic
+        laborum vitae aperiam, suscipit enim quia provident eum explicabo exercitationem esse consequatur earum officia.
+        Reprehenderit?</p>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       PARALLAX CONTATO
+       ===================================================== -->
+  <div class="parallax bg-parallax-contato">
+    <div class="parallax-content">
+      <h1>Pronto para <span class="evidencia">Falar Conosco</span>?</h1>
+      <p>Estamos à disposição para agendamentos e suporte.</p>
+    </div>
+  </div>
+
+
+  <!-- =====================================================
+       CONTATO
+       ===================================================== -->
+  <section class="secao-pagina contato" id="contato">
+    <div class="conteudo-centralizado">
+      <h2>Fale com <span class="evidencia">a gente</span>!</h2>
+
+      <div class="contato-container">
+        <div class="contato-header">
+          <h1><i class="fas fa-envelope"></i> Entre em Contato</h1>
+          <p>Tem dúvidas, sugestões ou quer um orçamento? Preencha o formulário abaixo e nossa equipe entrará em
+            contato.</p>
+        </div>
+
+        <form id="formContato" class="form-contato">
+          <input type="text" id="contatoNome" placeholder="Seu nome completo" required>
+          <input type="email" id="contatoEmail" placeholder="Seu e-mail" required>
+          <input type="tel" id="contatoTelefone" placeholder="Telefone (opcional)">
+
+          <select id="contatoAssunto" required>
+            <option value="">Selecione o assunto</option>
+            <option>Orçamento</option>
+            <option>Dúvida</option>
+            <option>Sugestão</option>
+            <option>Reclamação</option>
+            <option>Outro</option>
+          </select>
+
+          <textarea id="contatoMensagem" rows="5" placeholder="Escreva sua mensagem..." required></textarea>
+
+          <button type="submit">
+            <i class="fas fa-paper-plane"></i> Enviar Mensagem
+          </button>
+        </form>
+
+        <!-- Mensagem de sucesso (escondida por padrão) -->
+        <div id="msgSucesso" class="msg-sucesso">
+          <i class="fas fa-check-circle"></i>
+          <h3>Mensagem enviada com sucesso!</h3>
+          <p>Nosso time entrará em contato em breve. Obrigado!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       FOOTER
+       ===================================================== -->
+  <footer>
+    <p>&copy; 2023 M-Teck Performance Automotive. Direitos Reservados a LM-Web.</p>
+  </footer>
+
+  <a href="https://wa.me/5513974014642" class="whatsapp" target="_blank" aria-label="WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+
+  <script src="js/script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,254 @@
+/* =========================================================
+   M-TECH — MENU HAMBÚRGUER MOBILE
+   Ativa a partir de 650px (antes era 1100px)
+   ========================================================= */
+
+.botoes-mobile-header,
+.mobile-flutuantes,
+.gaveta-mobile,
+.overlay-mobile {
+    display: none;
+}
+
+/* =========================================================
+   ATÉ 650px — MODO MOBILE
+   ========================================================= */
+@media (max-width: 650px) {
+
+    /* Header sai de cena ao rolar */
+    header.cabecalho {
+        transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    body.rolado header.cabecalho {
+        transform: translateY(-100%);
+    }
+
+    /* Esconde nav desktop */
+    .nav-desktop,
+    .btn-contato-desktop,
+    header.cabecalho .btn-tema {
+        display: none !important;
+    }
+
+    /* Header mobile */
+    .container-menu {
+        justify-content: space-between;
+        padding: 15px 20px;
+        gap: 10px;
+    }
+
+    .botoes-mobile-header {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .btn-menu-header,
+    .btn-tema-header {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--mtech-yellow);
+        color: #1F1F1F;
+        border: none;
+        border-radius: 50%;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-menu-header:hover,
+    .btn-tema-header:hover {
+        background-color: var(--mtech-yellow-hover);
+        transform: scale(1.08);
+    }
+
+    /* Botões flutuantes */
+    .mobile-flutuantes {
+        display: flex;
+        gap: 10px;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 10000;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-30px) scale(0.85);
+        transition: all 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    body.rolado .mobile-flutuantes {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+    }
+
+    .btn-menu-mobile,
+    .btn-tema-mobile {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--mtech-yellow);
+        color: #1F1F1F;
+        border: none;
+        border-radius: 50%;
+        font-size: 20px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+        transition: all 0.3s ease;
+    }
+
+    .btn-menu-mobile:hover,
+    .btn-tema-mobile:hover {
+        background-color: var(--mtech-yellow-hover);
+        transform: scale(1.08);
+    }
+
+    .btn-menu-mobile:active,
+    .btn-tema-mobile:active {
+        transform: scale(0.95);
+    }
+
+    /* Overlay */
+    .overlay-mobile {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+    }
+
+    body.gaveta-aberta .overlay-mobile {
+        display: block;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Gaveta */
+    .gaveta-mobile {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 280px;
+        max-width: 80vw;
+        height: 100vh;
+        background-color: rgba(26, 26, 26, 0.98);
+        z-index: 10001;
+        padding: 30px 25px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+        transform: translateX(-100%);
+        transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+        box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
+        overflow-y: auto;
+    }
+
+    body.gaveta-aberta .gaveta-mobile {
+        transform: translateX(0);
+    }
+
+    .gaveta-mobile img {
+        height: 50px;
+        margin-top: 10px;
+    }
+
+    .gaveta-mobile nav {
+        width: 100%;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gaveta-mobile nav ul {
+        flex-direction: column;
+        align-items: center;
+        gap: 25px;
+        width: 100%;
+        padding: 0;
+        list-style: none;
+    }
+
+    .gaveta-mobile nav ul li {
+        width: 100%;
+        text-align: center;
+    }
+
+    .gaveta-mobile nav ul li a {
+        display: inline-block;
+        color: var(--mtech-text);
+        font-size: 18px;
+        font-weight: 500;
+        text-decoration: none;
+        padding-bottom: 6px;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .gaveta-mobile nav ul li a:hover,
+    .gaveta-mobile nav ul li a.active {
+        color: var(--mtech-red);
+        border-bottom-color: var(--mtech-red);
+    }
+
+    .btn-contato-mobile {
+        width: 140px;
+        padding: 12px 20px;
+        font-size: 16px;
+        margin-bottom: 15px;
+    }
+
+    /* Tema claro na gaveta */
+    html.light .gaveta-mobile {
+        background-color: rgba(235, 175, 0, 0.98);
+    }
+
+    html.light .gaveta-mobile nav ul li a {
+        color: #1F1F1F;
+    }
+
+    html.light .gaveta-mobile nav ul li a:hover,
+    html.light .gaveta-mobile nav ul li a.active {
+        color: var(--mtech-red);
+        border-bottom-color: var(--mtech-red);
+    }
+}
+
+/* =========================================================
+   ATÉ 500px — AJUSTES FINOS
+   ========================================================= */
+@media (max-width: 500px) {
+
+    .gaveta-mobile {
+        width: 260px;
+    }
+
+    .btn-menu-header,
+    .btn-tema-header {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .btn-menu-mobile,
+    .btn-tema-mobile {
+        width: 46px;
+        height: 46px;
+        font-size: 18px;
+    }
+
+    .mobile-flutuantes {
+        top: 12px;
+        left: 12px;
+        gap: 8px;
+    }
+}
