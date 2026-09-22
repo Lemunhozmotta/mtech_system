@@ -3,12 +3,44 @@
 
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="img/logo-ico.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <title>M-Teck Performance Automotive</title>
+
+  <!-- ===== SEO BÁSICO ===== -->
+  <meta name="description"
+    content="M-Teck Performance Automotive - Oficina mecânica e auto elétrica em Mauá - SP com atendimento emergencial 24h. Guincho, injeção eletrônica, suspensão, freios, embreagem e alinhamento. Atendemos toda a região do ABCDM.">
+  <meta name="keywords"
+    content="oficina mecânica, auto elétrica, guincho 24h, auto socorro, injeção eletrônica, ar condicionado automotivo, suspensão, freios, embreagem, câmbio, alinhamento, balanceamento, Mauá, ABCDM, Santo André, São Bernardo, São Caetano, Diadema">
+  <meta name="author" content="M-Teck Performance Automotive">
+  <meta name="robots" content="index, follow">
+
+  <!-- ===== OPEN GRAPH (WhatsApp, Facebook, LinkedIn) ===== -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="M-Teck Performance Automotive - Oficina e Auto Socorro 24h">
+  <meta property="og:description"
+    content="Oficina mecânica e auto elétrica em Mauá - SP com atendimento emergencial 24h. Guincho, injeção, suspensão, freios, embreagem e alinhamento. Atendemos toda a região do ABCDM.">
+  <meta property="og:image" content="https://lemunhozmotta.github.io/mtech_system/img/logo-br.png">
+  <meta property="og:url" content="https://lemunhozmotta.github.io/mtech_system/">
+  <meta property="og:site_name" content="M-Teck Performance Automotive">
+
+  <!-- ===== TWITTER CARD ===== -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="M-Teck Performance Automotive - Oficina e Auto Socorro 24h">
+  <meta name="twitter:description"
+    content="Oficina mecânica e auto elétrica em Mauá - SP com atendimento emergencial 24h.">
+  <meta name="twitter:image" content="https://lemunhozmotta.github.io/mtech_system/img/logo-br.png">
+
+  <!-- =====================================================
+       CSS
+       ===================================================== -->
   <link rel="stylesheet" href="css/style-geral.css">
   <link rel="stylesheet" href="css/style-menu-burg.css">
+  <link rel="stylesheet" href="css/style-modal-login.css">
+
 </head>
 
 <body>
@@ -29,21 +61,27 @@
 
     <div class="container-menu">
       <img src="img/logo-br.png" alt="logo M-Teck" id="logoMtech">
-      <nav class="nav-desktop">
-        <ul>
-          <li><a href="#home">Início</a></li>
-          <li><a href="#socorro">Socorro Mecânico</a></li>
-          <li><a href="#servicos">Serviços</a></li>
-          <li><a href="#sobre">Sobre</a></li>
-          <li><a href="#contato">Contato</a></li>
-        </ul>
-      </nav>
-      <button class="btn-tema" id="btnTema" aria-label="Alternar tema">
-        <i class="fas fa-sun"></i>
-      </button>
-      <a href="#socorro" class="btn-contato btn-contato-desktop">
-        <i class="fas fa-truck-pickup"></i> S.O.S 24h
-      </a>
+
+      <div class="menu-direita">
+        <nav class="nav-desktop">
+          <ul>
+            <li><a href="#home">Início</a></li>
+            <li><a href="#socorro">Socorro Mecânico</a></li>
+            <li><a href="#servicos">Serviços</a></li>
+            <li><a href="#sobre">Sobre</a></li>
+            <li><a href="#contato">Contato</a></li>
+          </ul>
+        </nav>
+        <button class="btn-tema" id="btnTema" aria-label="Alternar tema">
+          <i class="fas fa-sun"></i>
+        </button>
+        <a href="#socorro" class="btn-contato btn-contato-desktop">
+          <i class="fas fa-truck-pickup"></i> S.O.S 24h
+        </a>
+        <button class="btn-login-header" id="btnLoginHeader" aria-label="Área Restrita">
+          <i class="fas fa-lock"></i>
+        </button>
+      </div>
 
       <div class="botoes-mobile-header">
         <button class="btn-tema-header" id="btnTemaHeader" aria-label="Alternar tema">
@@ -89,6 +127,10 @@
     <a href="#socorro" class="btn-contato btn-contato-mobile">
       <i class="fas fa-truck-pickup"></i> S.O.S 24h
     </a>
+
+    <button class="btn-login-mobile" id="btnLoginMobile">
+      <i class="fas fa-lock"></i> Área Restrita
+    </button>
 
   </aside>
 
@@ -342,11 +384,99 @@
        ===================================================== -->
   <footer>
     <p>&copy; 2023 M-Teck Performance Automotive. Direitos Reservados a LM-Web.</p>
+    <p class="link-area-restrita">
+      <a href="#" id="abrirLogin"><i class="fas fa-lock"></i> Área Restrita</a>
+    </p>
   </footer>
 
   <a href="https://wa.me/5513974014642" class="whatsapp" target="_blank" aria-label="WhatsApp">
     <i class="fab fa-whatsapp"></i>
   </a>
+
+  <!-- =====================================================
+       MODAL DE LOGIN
+       ===================================================== -->
+  <div class="modal-overlay" id="modalLogin">
+    <div class="modal-caixa">
+
+      <!-- Botão fechar (X) -->
+      <button class="modal-fechar" id="fecharModal" aria-label="Fechar">
+        <i class="fas fa-times"></i>
+      </button>
+
+      <!-- ===== TELA 1: FORMULÁRIO DE LOGIN ===== -->
+      <div class="modal-tela-login" id="telaLogin">
+
+        <div class="modal-header">
+          <div class="icone-topo">
+            <i class="fas fa-lock"></i>
+          </div>
+          <h2>Área Restrita</h2>
+          <p>Acesso exclusivo para a equipe M-Teck</p>
+        </div>
+
+        <div class="modal-erro" id="modalErro">
+          <i class="fas fa-exclamation-triangle"></i>
+          E-mail ou senha incorretos.
+        </div>
+
+        <form class="modal-form" id="formLogin">
+          <div class="campo">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="loginEmail" placeholder="Seu e-mail" required autocomplete="email">
+          </div>
+
+          <div class="campo">
+            <i class="fas fa-key"></i>
+            <input type="password" id="loginSenha" placeholder="Sua senha" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" id="btnEntrar">
+            <i class="fas fa-sign-in-alt"></i> Entrar
+          </button>
+
+          <a href="#" class="link-esqueci" id="esqueciSenha">
+            Esqueci minha senha
+          </a>
+        </form>
+
+      </div>
+
+      <!-- ===== TELA 2: AVISO (cliente errou credenciais) ===== -->
+      <div class="modal-aviso" id="telaAviso">
+
+        <div class="icone-aviso">
+          <i class="fas fa-lock"></i>
+        </div>
+
+        <h2>Área exclusiva da equipe</h2>
+
+        <p>Esta área é restrita para funcionários da M-Teck.</p>
+        <p>Se você é cliente e precisa de atendimento, use os canais abaixo:</p>
+
+        <p class="canais-titulo">Como podemos ajudar?</p>
+
+        <div class="botoes-canais">
+          <a href="https://wa.me/5513974014642" target="_blank" class="btn-canal btn-whatsapp">
+            <i class="fab fa-whatsapp"></i>
+            <span>Falar no WhatsApp</span>
+          </a>
+
+          <a href="#socorro" class="btn-canal btn-socorro" id="btnAvisoSocorro">
+            <i class="fas fa-truck-pickup"></i>
+            <span>Socorro 24h</span>
+          </a>
+
+          <a href="#contato" class="btn-canal btn-contato" id="btnAvisoContato">
+            <i class="fas fa-envelope"></i>
+            <span>Formulário de Contato</span>
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
 
   <script src="js/script.js"></script>
 </body>

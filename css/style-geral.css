@@ -24,8 +24,8 @@
 
     /* Estruturais */
     --sidebar-largura: 200px;
-    --sidebar-altura: 55vh;
-    --sidebar-altura-recuo: 55vh;
+    --sidebar-altura: 60vh;
+    --sidebar-altura-recuo: 60vh;
 }
 
 html.light {
@@ -117,6 +117,12 @@ header.cabecalho {
     padding: 20px;
     transition: flex-direction 0.6s;
     gap: 20px;
+}
+
+.menu-direita {
+    display: flex;
+    align-items: center;
+    gap: 18px;
 }
 
 header img {
@@ -249,22 +255,35 @@ header.cabecalho.transformado #logoMtech {
     height: 35px;
 }
 
-header.cabecalho.transformado .btn-tema {
+header.cabecalho.transformado .menu-direita {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
     order: 2;
+}
+
+header.cabecalho.transformado .menu-direita .btn-tema {
+    order: 1;
     width: 44px;
     height: 44px;
     font-size: 18px;
     margin: 0;
 }
 
-header.cabecalho.transformado nav {
-    order: 3;
+header.cabecalho.transformado .menu-direita nav {
+    order: 2;
     width: 100%;
 }
 
-header.cabecalho.transformado .btn-contato {
-    order: 4;
+header.cabecalho.transformado .menu-direita .btn-contato {
+    order: 3;
     margin-top: 20px;
+}
+
+header.cabecalho.transformado .menu-direita .btn-login-header {
+    order: 4;
 }
 
 header.cabecalho.transformado nav ul {
@@ -358,7 +377,6 @@ header.cabecalho.transformado.recuado nav ul {
 
 /* =========================================================
    CARDS HORIZONTAIS DE SERVIÇOS
-   Imagem 40% esquerda + texto 60% direita
    ========================================================= */
 
 .servicos-cards {
@@ -430,37 +448,6 @@ header.cabecalho.transformado.recuado nav ul {
     line-height: 1.6;
     margin: 0;
     text-align: left;
-}
-
-/* =========================================================
-   RESPONSIVO DOS CARDS DE SERVIÇOS
-   ========================================================= */
-
-@media (max-width: 1100px) {
-    .servicos-cards {
-        grid-template-columns: 1fr;
-        max-width: 700px;
-    }
-}
-
-@media (max-width: 650px) {
-    .servico-card {
-        flex-direction: column;
-        min-height: auto;
-    }
-
-    .servico-card-img {
-        flex: none;
-        height: 180px;
-    }
-
-    .servico-card-texto {
-        padding: 18px 20px;
-    }
-
-    .servico-card-texto p {
-        font-size: 13.5px;
-    }
 }
 
 /* =========================================================
@@ -655,7 +642,6 @@ h2 {
 
 /* =========================================================
    PADRÃO ÚNICO DE CAMPOS (inputs, selects, textareas)
-   Vale para TODOS os formulários do site
    ========================================================= */
 
 input,
@@ -976,6 +962,11 @@ html.light footer {
         grid-template-columns: repeat(2, 1fr);
         max-width: 600px;
     }
+
+    .servicos-cards {
+        grid-template-columns: 1fr;
+        max-width: 700px;
+    }
 }
 
 @media (max-width: 650px) {
@@ -994,6 +985,7 @@ html.light footer {
     header.cabecalho.transformado .container-menu {
         flex-direction: row;
         justify-content: space-between;
+        align-items: center;
         height: auto;
         padding: 15px 20px;
         gap: 10px;
@@ -1005,30 +997,19 @@ html.light footer {
         height: 40px;
     }
 
-    header.cabecalho.transformado .btn-tema {
-        order: 0;
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
-    }
-
-    header.cabecalho.transformado nav {
-        order: 0;
-        width: auto;
-    }
-
-    header.cabecalho.transformado .btn-contato {
-        order: 0;
-    }
-
-    header.cabecalho.transformado nav ul {
+    header.cabecalho.transformado .menu-direita {
+        display: flex;
         flex-direction: row;
-        gap: 15px;
+        align-items: center;
+        gap: 12px;
         width: auto;
+        order: 0;
     }
 
-    header.cabecalho.transformado nav ul li {
-        width: auto;
+    header.cabecalho.transformado .menu-direita .btn-tema,
+    header.cabecalho.transformado .menu-direita .btn-contato,
+    header.cabecalho.transformado .menu-direita .btn-login-header {
+        order: 0;
     }
 
     header.cabecalho.transformado .emergencia {
@@ -1063,6 +1044,24 @@ html.light footer {
 
     .hero-cards {
         display: none;
+    }
+
+    .servico-card {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .servico-card-img {
+        flex: none;
+        height: 180px;
+    }
+
+    .servico-card-texto {
+        padding: 18px 20px;
+    }
+
+    .servico-card-texto p {
+        font-size: 13.5px;
     }
 }
 

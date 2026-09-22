@@ -1,0 +1,585 @@
+/* =========================================================
+   M-TECH — MODAL DE LOGIN
+   ========================================================= */
+
+/* ===== OVERLAY (fundo escuro atrás do modal) ===== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    animation: fadeInModal 0.3s ease;
+}
+
+.modal-overlay.ativo {
+    display: flex;
+}
+
+@keyframes fadeInModal {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* ===== CAIXA DO MODAL ===== */
+.modal-caixa {
+    background-color: var(--mtech-card, #252424);
+    border-radius: 16px;
+    padding: 40px 35px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    position: relative;
+    border: 1px solid var(--mtech-border, rgba(204, 204, 204, 0.15));
+    animation: slideUpModal 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@keyframes slideUpModal {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ===== BOTÃO FECHAR (X) ===== */
+.modal-fechar {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--mtech-text, #FEFEFE);
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modal-fechar:hover {
+    background-color: var(--mtech-red, #D62D2D);
+    color: #FEFEFE;
+    transform: rotate(90deg);
+}
+
+/* ===== CABEÇALHO DO MODAL ===== */
+.modal-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.modal-header .icone-topo {
+    width: 70px;
+    height: 70px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--mtech-red, #D62D2D);
+    color: #FEFEFE;
+    border-radius: 50%;
+    font-size: 32px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 30px rgba(214, 45, 45, 0.4);
+}
+
+.modal-header h2 {
+    color: var(--mtech-text, #FEFEFE);
+    font-size: 24px;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.modal-header p {
+    color: var(--mtech-text-muted, #888888);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ===== FORMULÁRIO DO MODAL ===== */
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.modal-form .campo {
+    position: relative;
+}
+
+.modal-form .campo i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--mtech-text-muted, #888888);
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.modal-form input {
+    width: 100%;
+    padding: 14px 16px 14px 45px;
+    background-color: var(--mtech-bg, #161616);
+    color: var(--mtech-text, #FEFEFE);
+    border: 1px solid var(--mtech-border, rgba(204, 204, 204, 0.15));
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.modal-form input:focus {
+    border-color: var(--mtech-red, #D62D2D);
+    box-shadow: 0 0 0 3px rgba(214, 45, 45, 0.2);
+}
+
+.modal-form input::placeholder {
+    color: var(--mtech-text-muted, #888888);
+}
+
+.modal-form button[type="submit"] {
+    width: 100%;
+    padding: 15px;
+    background-color: var(--mtech-red, #D62D2D);
+    color: #FEFEFE;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 5px;
+}
+
+.modal-form button[type="submit"]:hover {
+    background-color: var(--mtech-red-hover, #E23E3E);
+    transform: scale(1.02);
+    box-shadow: 0 0 20px var(--mtech-red-hover, #E23E3E);
+}
+
+.modal-form button[type="submit"]:disabled {
+    background-color: #444;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ===== MENSAGEM DE ERRO ===== */
+.modal-erro {
+    display: none;
+    padding: 12px 15px;
+    background-color: rgba(214, 45, 45, 0.15);
+    border: 1px solid var(--mtech-red, #D62D2D);
+    border-radius: 8px;
+    color: #ff6b6b;
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.modal-erro.ativo {
+    display: block;
+    animation: shakeErro 0.4s ease;
+}
+
+@keyframes shakeErro {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-8px);
+    }
+
+    75% {
+        transform: translateX(8px);
+    }
+}
+
+/* ===== TELA DE AVISO (quando cliente erra) ===== */
+.modal-aviso {
+    display: none;
+    text-align: center;
+}
+
+.modal-aviso.ativo {
+    display: block;
+    animation: fadeInModal 0.4s ease;
+}
+
+.modal-aviso .icone-aviso {
+    width: 80px;
+    height: 80px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--mtech-yellow, #EBAF00);
+    color: #1F1F1F;
+    border-radius: 50%;
+    font-size: 38px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 30px rgba(235, 175, 0, 0.4);
+}
+
+.modal-aviso h2 {
+    color: var(--mtech-text, #FEFEFE);
+    font-size: 22px;
+    margin-bottom: 12px;
+}
+
+.modal-aviso p {
+    color: var(--mtech-text, #FEFEFE);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+.modal-aviso .canais-titulo {
+    font-weight: 600;
+    color: var(--mtech-yellow, #EBAF00);
+    margin-top: 20px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.modal-aviso .botoes-canais {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-aviso .btn-canal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 13px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: #FEFEFE;
+}
+
+.modal-aviso .btn-whatsapp {
+    background-color: #25d366;
+}
+
+.modal-aviso .btn-whatsapp:hover {
+    background-color: #1eb355;
+    transform: scale(1.02);
+}
+
+.modal-aviso .btn-socorro {
+    background-color: var(--mtech-red, #D62D2D);
+}
+
+.modal-aviso .btn-socorro:hover {
+    background-color: var(--mtech-red-hover, #E23E3E);
+    transform: scale(1.02);
+}
+
+.modal-aviso .btn-contato {
+    background-color: transparent;
+    border: 2px solid var(--mtech-text-muted, #888888);
+}
+
+.modal-aviso .btn-contato:hover {
+    border-color: var(--mtech-text, #FEFEFE);
+    background-color: rgba(255, 255, 255, 0.05);
+    transform: scale(1.02);
+}
+
+.modal-aviso .link-voltar {
+    display: inline-block;
+    margin-top: 20px;
+    color: var(--mtech-text-muted, #888888);
+    font-size: 13px;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.modal-aviso .link-voltar:hover {
+    color: var(--mtech-yellow, #EBAF00);
+}
+
+/* ===== TEMA CLARO ===== */
+html.light .modal-caixa {
+    background-color: #FEFEFE;
+    border-color: rgba(31, 31, 31, 0.15);
+}
+
+html.light .modal-header h2 {
+    color: #1F1F1F;
+}
+
+html.light .modal-header p {
+    color: #666666;
+}
+
+html.light .modal-form input {
+    background-color: #E8E8E8;
+    color: #1F1F1F;
+    border-color: rgba(31, 31, 31, 0.15);
+}
+
+html.light .modal-form input::placeholder {
+    color: #666666;
+}
+
+html.light .modal-form .campo i {
+    color: #666666;
+}
+
+html.light .modal-aviso h2 {
+    color: #1F1F1F;
+}
+
+html.light .modal-aviso p {
+    color: #1F1F1F;
+}
+
+html.light .modal-aviso .canais-titulo {
+    color: var(--mtech-red, #D62D2D);
+}
+
+html.light .modal-aviso .btn-contato {
+    border-color: #666666;
+    color: #1F1F1F;
+}
+
+html.light .modal-aviso .btn-contato:hover {
+    border-color: #1F1F1F;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+html.light .modal-aviso .link-voltar {
+    color: #666666;
+}
+
+html.light .modal-aviso .link-voltar:hover {
+    color: var(--mtech-red, #D62D2D);
+}
+
+/* ===== RESPONSIVO ===== */
+@media (max-width: 500px) {
+    .modal-caixa {
+        padding: 30px 22px;
+        border-radius: 14px;
+    }
+
+    .modal-header .icone-topo {
+        width: 60px;
+        height: 60px;
+        font-size: 26px;
+    }
+
+    .modal-header h2 {
+        font-size: 20px;
+    }
+
+    .modal-aviso .icone-aviso {
+        width: 65px;
+        height: 65px;
+        font-size: 30px;
+    }
+
+    .modal-aviso h2 {
+        font-size: 19px;
+    }
+
+    .modal-aviso .btn-canal {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+}
+
+/* =========================================================
+   LINK "ÁREA RESTRITA" NO RODAPÉ
+   ========================================================= */
+
+.link-area-restrita {
+    margin-top: 15px;
+    font-size: 13px;
+}
+
+.link-area-restrita a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--mtech-text-muted, #888888);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+.link-area-restrita a i {
+    font-size: 12px;
+}
+
+.link-area-restrita a:hover {
+    color: var(--mtech-yellow, #EBAF00);
+    background-color: rgba(235, 175, 0, 0.08);
+}
+
+/* Tema claro */
+html.light .link-area-restrita a {
+    color: #666666;
+}
+
+html.light .link-area-restrita a:hover {
+    color: var(--mtech-red, #D62D2D);
+    background-color: rgba(214, 45, 45, 0.08);
+}
+
+/* =========================================================
+   BOTÃO DE LOGIN NO HEADER (ícone de cadeado)
+   ========================================================= */
+
+.btn-login-header {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--mtech-text, #FEFEFE);
+    border: 2px solid var(--mtech-text-muted, #888888);
+    border-radius: 50%;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.btn-login-header:hover {
+    color: var(--mtech-yellow, #EBAF00);
+    border-color: var(--mtech-yellow, #EBAF00);
+    background-color: rgba(235, 175, 0, 0.08);
+    opacity: 1;
+    transform: scale(1.08);
+}
+
+/* Tema claro */
+html.light .btn-login-header {
+    color: #1F1F1F;
+    border-color: #666666;
+}
+
+html.light .btn-login-header:hover {
+    color: var(--mtech-red, #D62D2D);
+    border-color: var(--mtech-red, #D62D2D);
+    background-color: rgba(214, 45, 45, 0.08);
+}
+
+/* No mobile, esconde (o acesso vai pela gaveta) */
+@media (max-width: 650px) {
+    .btn-login-header {
+        display: none;
+    }
+}
+
+/* =========================================================
+   BOTÃO DE LOGIN NA GAVETA MOBILE
+   ========================================================= */
+
+.btn-login-mobile {
+    display: none;
+}
+
+@media (max-width: 650px) {
+    .btn-login-mobile {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background-color: transparent;
+        color: var(--mtech-text, #FEFEFE);
+        border: 2px solid var(--mtech-text-muted, #888888);
+        border-radius: 8px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+        width: 140px;
+    }
+
+    .btn-login-mobile:hover {
+        color: var(--mtech-yellow, #EBAF00);
+        border-color: var(--mtech-yellow, #EBAF00);
+        background-color: rgba(235, 175, 0, 0.08);
+    }
+
+    /* Tema claro */
+    html.light .btn-login-mobile {
+        color: #1F1F1F;
+        border-color: #666666;
+    }
+
+    html.light .btn-login-mobile:hover {
+        color: var(--mtech-red, #D62D2D);
+        border-color: var(--mtech-red, #D62D2D);
+    }
+}
+
+/* =========================================================
+   LINK "ESQUECI MINHA SENHA" (na tela de login)
+   ========================================================= */
+
+.link-esqueci {
+    display: block;
+    text-align: center;
+    margin-top: 5px;
+    color: var(--mtech-text-muted, #888888);
+    font-size: 13px;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.link-esqueci:hover {
+    color: var(--mtech-yellow, #EBAF00);
+    text-decoration: underline;
+}
+
+/* Tema claro */
+html.light .link-esqueci {
+    color: #666666;
+}
+
+html.light .link-esqueci:hover {
+    color: var(--mtech-red, #D62D2D);
+}

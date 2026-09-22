@@ -288,3 +288,180 @@ if (formContato) {
         // }, 5000);
     });
 }
+
+/* =========================================================
+   MODAL DE LOGIN — M-TECH SYSTEM
+   ========================================================= */
+
+// ===== ELEMENTOS =====
+const modalLogin = document.getElementById('modalLogin');
+const btnLoginHeader = document.getElementById('btnLoginHeader');
+const btnLoginMobile = document.getElementById('btnLoginMobile');
+const abrirLogin = document.getElementById('abrirLogin');
+const fecharModal = document.getElementById('fecharModal');
+const formLogin = document.getElementById('formLogin');
+const telaLogin = document.getElementById('telaLogin');
+const telaAviso = document.getElementById('telaAviso');
+const modalErro = document.getElementById('modalErro');
+const btnEntrar = document.getElementById('btnEntrar');
+const btnAvisoSocorro = document.getElementById('btnAvisoSocorro');
+const btnAvisoContato = document.getElementById('btnAvisoContato');
+
+// ===== ABRIR MODAL =====
+function abrirModal() {
+    if (!modalLogin) return;
+    modalLogin.classList.add('ativo');
+    document.body.style.overflow = 'hidden';
+
+    // Foca no primeiro campo
+    setTimeout(() => {
+        const emailInput = document.getElementById('loginEmail');
+        if (emailInput) emailInput.focus();
+    }, 300);
+}
+
+// ===== FECHAR MODAL =====
+function fecharModalFn() {
+    if (!modalLogin) return;
+    modalLogin.classList.remove('ativo');
+    document.body.style.overflow = '';
+
+    // Reset: volta pra tela de login
+    setTimeout(() => {
+        mostrarTelaLogin();
+        if (formLogin) formLogin.reset();
+        if (modalErro) modalErro.classList.remove('ativo');
+        if (btnEntrar) {
+            btnEntrar.disabled = false;
+            btnEntrar.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+        }
+    }, 300);
+}
+
+// ===== MOSTRAR TELA DE LOGIN =====
+function mostrarTelaLogin() {
+    if (telaLogin) telaLogin.style.display = 'block';
+    if (telaAviso) telaAviso.classList.remove('ativo');
+}
+
+// ===== MOSTRAR TELA DE AVISO =====
+function mostrarTelaAviso() {
+    if (telaLogin) telaLogin.style.display = 'none';
+    if (telaAviso) telaAviso.classList.add('ativo');
+}
+
+// ===== EVENTOS DE ABRIR =====
+if (btnLoginHeader) btnLoginHeader.addEventListener('click', abrirModal);
+if (btnLoginMobile) btnLoginMobile.addEventListener('click', abrirModal);
+if (abrirLogin) {
+    abrirLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        abrirModal();
+    });
+}
+
+// ===== EVENTOS DE FECHAR =====
+if (fecharModal) fecharModal.addEventListener('click', fecharModalFn);
+
+// Clicar fora (no overlay) fecha
+if (modalLogin) {
+    modalLogin.addEventListener('click', (e) => {
+        if (e.target === modalLogin) {
+            fecharModalFn();
+        }
+    });
+}
+
+// ESC fecha
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalLogin && modalLogin.classList.contains('ativo')) {
+        fecharModalFn();
+    }
+});
+
+// ===== LINK "ESQUECI MINHA SENHA" =====
+const esqueciSenha = document.getElementById('esqueciSenha');
+
+if (esqueciSenha) {
+    esqueciSenha.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert('Funcionalidade de recuperação de senha em desenvolvimento.\n\nPor favor, entre em contato com o administrador.');
+        // Quando implementar: redirecionar pra recuperar_senha.php
+    });
+}
+
+// ===== BOTÕES DA TELA DE AVISO (fecham o modal) =====
+if (btnAvisoSocorro) {
+    btnAvisoSocorro.addEventListener('click', () => fecharModalFn());
+}
+if (btnAvisoContato) {
+    btnAvisoContato.addEventListener('click', () => fecharModalFn());
+}
+
+// ===== ENVIO DO FORMULÁRIO =====
+if (formLogin) {
+    formLogin.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('loginEmail').value.trim();
+        const senha = document.getElementById('loginSenha').value;
+
+        // Desabilita o botão
+        if (btnEntrar) {
+            btnEntrar.disabled = true;
+            btnEntrar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+        }
+
+        // Esconde erro anterior
+        if (modalErro) modalErro.classList.remove('ativo');
+
+        try {
+            const resposta = await fetch('sistema/login.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `email=${encodeURIComponent(email)}&senha=${encodeURIComponent(senha)}`
+            });
+
+            const dados = await resposta.json();
+
+            if (dados.sucesso) {
+                // ===== SUCESSO → REDIRECIONA =====
+                if (btnEntrar) {
+                    btnEntrar.innerHTML = '<i class="fas fa-check"></i> Sucesso!';
+                }
+                setTimeout(() => {
+                    window.location.href = 'sistema/' + dados.redirecionar;
+                }, 500);
+
+            } else if (dados.tipo === 'cliente') {
+                // ===== E-MAIL NÃO EXISTE → TELA DE AVISO =====
+                mostrarTelaAviso();
+
+            } else {
+                // ===== SENHA ERRADA OU OUTRO ERRO → MENSAGEM NA TELA =====
+                if (btnEntrar) {
+                    btnEntrar.disabled = false;
+                    btnEntrar.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+                }
+                if (modalErro) {
+                    modalErro.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${dados.erro}`;
+                    modalErro.classList.add('ativo');
+                }
+            }
+
+        } catch (err) {
+            // Erro de rede ou JSON
+            if (btnEntrar) {
+                btnEntrar.disabled = false;
+                btnEntrar.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+            }
+            if (modalErro) {
+                modalErro.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro ao conectar. Tente novamente.';
+                modalErro.classList.add('ativo');
+            }
+            console.error(err);
+        }
+    });
+}

@@ -1,0 +1,1386 @@
+/* =========================================================
+   M-TECH SYSTEM — ADMIN (ÁREA LOGADA)
+   ========================================================= */
+
+/* ===== RESET ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ===== VARIÁVEIS (mesmas do site) ===== */
+:root {
+    --mtech-yellow: #EBAF00;
+    --mtech-yellow-hover: #F5C21A;
+    --mtech-red: #D62D2D;
+    --mtech-red-hover: #E23E3E;
+    --mtech-white: #FEFEFE;
+
+    --mtech-bg: #161616;
+    --mtech-card: #252424;
+    --mtech-card-trs: rgba(17, 17, 17, 0.75);
+
+    --mtech-text: #FEFEFE;
+    --mtech-text-muted: #888888;
+
+    --mtech-border: rgba(204, 204, 204, 0.15);
+
+    --sidebar-largura: 240px;
+    --header-altura: 65px;
+}
+
+html.light {
+    --mtech-bg: #E8E8E8;
+    --mtech-card: #FEFEFE;
+    --mtech-text: #1F1F1F;
+    --mtech-text-muted: #666666;
+    --mtech-border: rgba(31, 31, 31, 0.15);
+}
+
+/* ===== BASE ===== */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--mtech-bg);
+    color: var(--mtech-text);
+    min-height: 100vh;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* =========================================================
+   LAYOUT PRINCIPAL (sidebar + conteúdo)
+   ========================================================= */
+
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* =========================================================
+   SIDEBAR (menu lateral)
+   ========================================================= */
+
+.admin-sidebar {
+    width: var(--sidebar-largura);
+    background-color: #1a1a1a;
+    color: #FEFEFE;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-y: auto;
+}
+
+.admin-sidebar-logo {
+    padding: 25px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: center;
+}
+
+.admin-sidebar-logo img {
+    max-width: 160px;
+    height: auto;
+}
+
+.admin-sidebar-menu {
+    flex: 1;
+    padding: 20px 0;
+    list-style: none;
+}
+
+.admin-sidebar-menu li {
+    margin-bottom: 2px;
+}
+
+.admin-sidebar-menu a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 22px;
+    color: #cccccc;
+    font-size: 14px;
+    font-weight: 400;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    position: relative;
+}
+
+.admin-sidebar-menu a i {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    color: #888888;
+    transition: color 0.2s ease;
+}
+
+.admin-sidebar-menu a:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: #FEFEFE;
+}
+
+.admin-sidebar-menu a:hover i {
+    color: #FEFEFE;
+}
+
+/* Item ativo: barra amarela + texto vermelho */
+.admin-sidebar-menu a.ativo {
+    background-color: rgba(214, 45, 45, 0.08);
+    color: var(--mtech-red);
+    border-left-color: var(--mtech-yellow);
+    font-weight: 600;
+}
+
+.admin-sidebar-menu a.ativo i {
+    color: var(--mtech-red);
+}
+
+/* Rodapé da sidebar (Sair) */
+.admin-sidebar-footer {
+    padding: 15px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    list-style: none;
+}
+
+.admin-sidebar-footer a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 22px;
+    color: #cccccc;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.admin-sidebar-footer a:hover {
+    background-color: rgba(214, 45, 45, 0.1);
+    color: var(--mtech-red);
+}
+
+.admin-sidebar-footer a i {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+/* =========================================================
+   ÁREA PRINCIPAL (header + conteúdo)
+   ========================================================= */
+
+.admin-main {
+    flex: 1;
+    margin-left: var(--sidebar-largura);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ===== HEADER ===== */
+.admin-header {
+    height: var(--header-altura);
+    background-color: var(--mtech-card);
+    border-bottom: 1px solid var(--mtech-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.admin-header-titulo {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--mtech-text);
+}
+
+.admin-header-acoes {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.admin-header-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--mtech-text);
+    border: none;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.admin-header-btn:hover {
+    background-color: rgba(214, 45, 45, 0.1);
+    color: var(--mtech-red);
+}
+
+.admin-header-btn .badge-notif {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 18px;
+    height: 18px;
+    background-color: var(--mtech-red);
+    color: #FEFEFE;
+    border-radius: 50%;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* Usuário logado */
+.admin-header-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px 6px 6px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 30px;
+    border: 1px solid var(--mtech-border);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.admin-header-user:hover {
+    background-color: rgba(214, 45, 45, 0.08);
+    border-color: var(--mtech-red);
+}
+
+.admin-header-user-avatar {
+    width: 32px;
+    height: 32px;
+    background-color: var(--mtech-red);
+    color: #FEFEFE;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.admin-header-user-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.admin-header-user-nome {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mtech-text);
+}
+
+.admin-header-user-nivel {
+    font-size: 11px;
+    color: var(--mtech-text-muted);
+}
+
+/* ===== CONTEÚDO ===== */
+.admin-conteudo {
+    flex: 1;
+    padding: 30px;
+}
+
+.admin-titulo-pagina {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--mtech-text);
+    margin-bottom: 25px;
+}
+
+/* =========================================================
+   CARDS DE RESUMO (Dashboard)
+   ========================================================= */
+
+.admin-cards-resumo {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.admin-card-resumo {
+    background-color: var(--mtech-card);
+    border-radius: 12px;
+    padding: 25px;
+    border-left: 4px solid var(--mtech-red);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-card-resumo:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.admin-card-resumo.amarelo {
+    border-left-color: var(--mtech-yellow);
+}
+
+.admin-card-resumo.azul {
+    border-left-color: #4A90E2;
+}
+
+.admin-card-resumo.verde {
+    border-left-color: #25d366;
+}
+
+.admin-card-resumo-valor {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--mtech-text);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.admin-card-resumo-titulo {
+    font-size: 13px;
+    color: var(--mtech-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-card-resumo-icone {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 28px;
+    color: var(--mtech-border);
+    opacity: 0.5;
+}
+
+/* =========================================================
+   BLOCOS DE CONTEÚDO (caixas)
+   ========================================================= */
+
+.admin-bloco {
+    background-color: var(--mtech-card);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.admin-bloco-titulo {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--mtech-text);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--mtech-border);
+}
+
+.admin-bloco-titulo span {
+    font-size: 13px;
+    color: var(--mtech-text-muted);
+    font-weight: 400;
+}
+
+/* =========================================================
+   TABELAS
+   ========================================================= */
+
+.admin-tabela {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.admin-tabela thead th {
+    text-align: left;
+    padding: 12px 15px;
+    color: var(--mtech-text-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    border-bottom: 2px solid var(--mtech-border);
+}
+
+.admin-tabela tbody td {
+    padding: 14px 15px;
+    border-bottom: 1px solid var(--mtech-border);
+    color: var(--mtech-text);
+    vertical-align: middle;
+}
+
+.admin-tabela tbody tr:hover {
+    background-color: rgba(214, 45, 45, 0.04);
+}
+
+.admin-tabela tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* =========================================================
+   BOTÕES
+   ========================================================= */
+
+.admin-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: var(--mtech-red);
+    color: #FEFEFE;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.admin-btn:hover {
+    background-color: var(--mtech-red-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(214, 45, 45, 0.3);
+}
+
+.admin-btn-secundario {
+    background-color: transparent;
+    border: 1px solid var(--mtech-border);
+    color: var(--mtech-text);
+}
+
+.admin-btn-secundario:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--mtech-red);
+    color: var(--mtech-red);
+    box-shadow: none;
+}
+
+/* =========================================================
+   BADGES / STATUS
+   ========================================================= */
+
+.admin-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.admin-badge-sucesso {
+    background-color: rgba(37, 211, 102, 0.15);
+    color: #25d366;
+}
+
+.admin-badge-alerta {
+    background-color: rgba(235, 175, 0, 0.15);
+    color: var(--mtech-yellow);
+}
+
+.admin-badge-erro {
+    background-color: rgba(214, 45, 45, 0.15);
+    color: var(--mtech-red);
+}
+
+.admin-badge-info {
+    background-color: rgba(74, 144, 226, 0.15);
+    color: #4A90E2;
+}
+
+/* =========================================================
+   TEMA CLARO — AJUSTES ESPECÍFICOS
+   ========================================================= */
+
+html.light .admin-sidebar {
+    background-color: #252424;
+}
+
+html.light .admin-header {
+    background-color: #FEFEFE;
+}
+
+html.light .admin-card-resumo {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+html.light .admin-bloco {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+html.light .admin-header-user {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+html.light .admin-btn-secundario:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 1100px) {
+    .admin-cards-resumo {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --sidebar-largura: 200px;
+    }
+
+    .admin-header {
+        padding: 0 20px;
+    }
+
+    .admin-conteudo {
+        padding: 20px;
+    }
+
+    .admin-header-user-info {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .admin-cards-resumo {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-titulo-pagina {
+        font-size: 20px;
+    }
+}
+
+/* =========================================================
+   BARRA DE AÇÕES (busca + filtro + novo)
+   ========================================================= */
+
+.admin-barra-acoes {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.admin-busca {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+}
+
+.admin-busca i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--mtech-text-muted);
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.admin-busca input {
+    width: 100%;
+    padding: 10px 14px 10px 38px;
+    background-color: var(--mtech-bg);
+    color: var(--mtech-text);
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.admin-busca input:focus {
+    border-color: var(--mtech-red);
+    box-shadow: 0 0 0 3px rgba(214, 45, 45, 0.2);
+}
+
+.admin-select-filtro {
+    padding: 10px 14px;
+    background-color: var(--mtech-bg);
+    color: var(--mtech-text);
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.admin-select-filtro:focus {
+    border-color: var(--mtech-red);
+}
+
+.admin-btn-novo {
+    margin-left: auto;
+}
+
+/* =========================================================
+   BOTÕES DE AÇÃO (editar, desativar, reativar)
+   ========================================================= */
+
+.admin-btn-acao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background-color: transparent;
+    color: var(--mtech-text);
+    border: 1px solid var(--mtech-border);
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 5px;
+    text-decoration: none;
+}
+
+.admin-btn-acao:hover {
+    background-color: rgba(74, 144, 226, 0.15);
+    border-color: #4A90E2;
+    color: #4A90E2;
+    transform: translateY(-1px);
+}
+
+.admin-btn-acao-erro:hover {
+    background-color: rgba(214, 45, 45, 0.15);
+    border-color: var(--mtech-red);
+    color: var(--mtech-red);
+}
+
+.admin-btn-acao-sucesso:hover {
+    background-color: rgba(37, 211, 102, 0.15);
+    border-color: #25d366;
+    color: #25d366;
+}
+
+/* =========================================================
+   ESTADO VAZIO (mensagem quando não tem dados)
+   ========================================================= */
+
+.admin-vazio {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--mtech-text-muted);
+}
+
+.admin-vazio i {
+    font-size: 48px;
+    opacity: 0.4;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.admin-vazio p {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: var(--mtech-text);
+}
+
+.admin-vazio small {
+    font-size: 13px;
+    color: var(--mtech-text-muted);
+}
+
+.admin-vazio a {
+    color: var(--mtech-red);
+    text-decoration: underline;
+}
+
+/* =========================================================
+   RESPONSIVO — BARRA DE AÇÕES
+   ========================================================= */
+
+@media (max-width: 768px) {
+    .admin-barra-acoes {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-btn-novo {
+        margin-left: 0;
+        justify-content: center;
+    }
+
+    .admin-busca {
+        width: 100%;
+    }
+}
+
+/* =========================================================
+   TOPO DE PÁGINA (com botão voltar)
+   ========================================================= */
+
+.admin-topo-pagina {
+    margin-bottom: 25px;
+}
+
+.admin-voltar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background-color: transparent;
+    color: var(--mtech-text);
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+    margin-right: 12px;
+    transition: all 0.2s ease;
+    vertical-align: middle;
+}
+
+.admin-voltar:hover {
+    background-color: rgba(214, 45, 45, 0.1);
+    border-color: var(--mtech-red);
+    color: var(--mtech-red);
+    transform: translateX(-2px);
+}
+
+/* =========================================================
+   FORMULÁRIO DO ADMIN
+   ========================================================= */
+
+.admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.admin-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.admin-form-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-form-campo-full {
+    grid-column: 1 / -1;
+}
+
+.admin-form-campo label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--mtech-text);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.admin-form-campo label::after {
+    /* Asterisco vermelho pra campos obrigatórios */
+    content: '';
+}
+
+.admin-form-campo label:has(+ input[required])::after,
+.admin-form-campo label:has(+ div input[required])::after {
+    content: ' *';
+    color: var(--mtech-red);
+    font-weight: bold;
+}
+
+.admin-form-campo input,
+.admin-form-campo select,
+.admin-form-campo textarea {
+    width: 100%;
+    padding: 12px 14px;
+    background-color: var(--mtech-bg);
+    color: var(--mtech-text);
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.admin-form-campo input:focus,
+.admin-form-campo select:focus,
+.admin-form-campo textarea:focus {
+    border-color: var(--mtech-red);
+    box-shadow: 0 0 0 3px rgba(214, 45, 45, 0.15);
+}
+
+.admin-form-campo input::placeholder,
+.admin-form-campo textarea::placeholder {
+    color: var(--mtech-text-muted);
+}
+
+.admin-form-campo textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Input com botão ao lado (copiar telefone) */
+.admin-input-grupo {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+    position: relative;
+}
+
+.admin-input-grupo input {
+    flex: 1;
+}
+
+.admin-btn-icone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    background-color: transparent;
+    color: var(--mtech-text-muted);
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.admin-btn-icone:hover {
+    background-color: rgba(214, 45, 45, 0.1);
+    border-color: var(--mtech-red);
+    color: var(--mtech-red);
+}
+
+/* =========================================================
+   AÇÕES DO FORMULÁRIO (cancelar/salvar)
+   ========================================================= */
+
+.admin-form-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 10px;
+}
+
+/* =========================================================
+   RESPONSIVO — FORMULÁRIO
+   ========================================================= */
+
+@media (max-width: 768px) {
+    .admin-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-form-acoes {
+        flex-direction: column-reverse;
+    }
+
+    .admin-form-acoes .admin-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* =========================================================
+   BOTÃO "NÃO SEI MEU CEP" + DICA
+   ========================================================= */
+
+.admin-btn-nao-sei-cep {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    background-color: transparent;
+    color: var(--mtech-yellow);
+    border: 1px solid var(--mtech-yellow);
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.admin-btn-nao-sei-cep:hover {
+    background-color: rgba(235, 175, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.admin-btn-nao-sei-cep i {
+    font-size: 14px;
+}
+
+.admin-dica {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--mtech-text-muted);
+    font-style: italic;
+}
+
+/* No mobile, o botão "Não sei meu CEP" fica embaixo */
+@media (max-width: 500px) {
+    .admin-btn-nao-sei-cep {
+        padding: 10px 14px;
+        font-size: 12px;
+    }
+
+    .admin-btn-nao-sei-cep span {
+        display: inline;
+    }
+
+    .admin-input-grupo {
+        flex-direction: column;
+    }
+}
+
+/* =========================================================
+   ALERTAS / MENSAGENS DE FEEDBACK
+   ========================================================= */
+
+.admin-alerta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideDownAlerta 0.4s ease;
+}
+
+.admin-alerta i {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.admin-alerta-sucesso {
+    background-color: rgba(37, 211, 102, 0.12);
+    color: #25d366;
+    border-left: 4px solid #25d366;
+}
+
+.admin-alerta-alerta {
+    background-color: rgba(235, 175, 0, 0.12);
+    color: var(--mtech-yellow);
+    border-left: 4px solid var(--mtech-yellow);
+}
+
+.admin-alerta-erro {
+    background-color: rgba(214, 45, 45, 0.12);
+    color: var(--mtech-red);
+    border-left: 4px solid var(--mtech-red);
+}
+
+@keyframes slideDownAlerta {
+    from {
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================================
+   AUTOCOMPLETE DE CLIENTE (módulo Carros)
+   ========================================================= */
+
+.admin-autocomplete-lista {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--mtech-card);
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+    margin-top: 4px;
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 50;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.admin-autocomplete-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--mtech-border);
+    transition: background 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.admin-autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.admin-autocomplete-item:hover {
+    background: rgba(235, 175, 0, 0.1);
+}
+
+.admin-autocomplete-item strong {
+    color: var(--mtech-text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.admin-autocomplete-item small {
+    color: var(--mtech-text-muted);
+    font-size: 12px;
+}
+
+/* =========================================================
+   MARCAS E MODELOS (tela de gerenciamento)
+   ========================================================= */
+
+.admin-marcas-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    align-items: start;
+}
+
+/* ===== LISTA DE MARCAS ===== */
+.admin-lista-marcas {
+    list-style: none;
+    max-height: 550px;
+    overflow-y: auto;
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+}
+
+.admin-lista-marcas li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--mtech-border);
+    transition: background 0.15s ease;
+    padding-right: 8px;
+}
+
+.admin-lista-marcas li:last-child {
+    border-bottom: none;
+}
+
+.admin-lista-marcas li:hover {
+    background-color: rgba(235, 175, 0, 0.06);
+}
+
+.admin-lista-marcas li.ativa {
+    background-color: rgba(214, 45, 45, 0.08);
+    border-left: 3px solid var(--mtech-yellow);
+    padding-left: 3px;
+}
+
+.admin-lista-marcas li.ativa .admin-lista-marca-nome {
+    color: var(--mtech-red);
+    font-weight: 600;
+}
+
+.admin-lista-marcas li a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    padding: 12px 15px;
+    color: var(--mtech-text);
+    text-decoration: none;
+    gap: 10px;
+    min-width: 0;
+}
+
+.admin-lista-marca-nome {
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-lista-marca-info {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.admin-lista-marca-info .admin-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+}
+
+/* ===== LISTA DE MODELOS ===== */
+.admin-lista-modelos {
+    list-style: none;
+    max-height: 550px;
+    overflow-y: auto;
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+}
+
+.admin-lista-modelos li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--mtech-border);
+    transition: background 0.15s ease;
+    gap: 10px;
+}
+
+.admin-lista-modelos li:last-child {
+    border-bottom: none;
+}
+
+.admin-lista-modelos li:hover {
+    background-color: rgba(74, 144, 226, 0.06);
+}
+
+.admin-lista-modelo-nome {
+    font-size: 14px;
+    color: var(--mtech-text);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-lista-modelo-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.admin-lista-modelo-info .admin-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+}
+
+/* ===== MODAL ===== */
+.admin-modal-fundo {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 200;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.admin-modal-fundo.ativo {
+    opacity: 1;
+    visibility: visible;
+}
+
+.admin-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    background-color: var(--mtech-card);
+    border: 1px solid var(--mtech-border);
+    border-radius: 12px;
+    padding: 25px;
+    width: 90%;
+    max-width: 450px;
+    z-index: 201;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.admin-modal.ativo {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.admin-modal-titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--mtech-text);
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--mtech-border);
+}
+
+.admin-modal-titulo i {
+    color: var(--mtech-yellow);
+}
+
+.admin-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.admin-modal-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 10px;
+}
+
+/* ===== RESPONSIVO ===== */
+@media (max-width: 900px) {
+    .admin-marcas-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-lista-marcas,
+    .admin-lista-modelos {
+        max-height: 350px;
+    }
+}
+
+/* =========================================================
+   COMBOBOX (marca e modelo no formulário de carro)
+   ========================================================= */
+
+.admin-form-campo-combobox {
+    position: relative;
+}
+
+.admin-combobox {
+    position: relative;
+}
+
+.admin-combobox input[type="text"] {
+    padding-right: 50px;
+}
+
+/* ===== SETINHA DO COMBOBOX (clicável) ===== */
+.admin-combobox-seta {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mtech-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--mtech-border);
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    transition: color 0.15s ease, background 0.15s ease;
+    z-index: 2;
+}
+
+.admin-combobox-seta:hover {
+    color: var(--mtech-yellow);
+    background: rgba(235, 175, 0, 0.08);
+}
+
+.admin-combobox.aberto .admin-combobox-seta {
+    color: var(--mtech-yellow);
+}
+
+.admin-combobox.aberto .admin-combobox-seta i {
+    transform: rotate(180deg);
+}
+
+.admin-combobox-seta i {
+    transition: transform 0.2s ease;
+}
+
+/* ===== LISTA SUSPENSA ===== */
+.admin-combobox-lista {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--mtech-card);
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+    margin-top: 4px;
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.admin-combobox-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    color: var(--mtech-text);
+    font-size: 14px;
+    border-bottom: 1px solid var(--mtech-border);
+    transition: background 0.12s ease;
+}
+
+.admin-combobox-item:last-child {
+    border-bottom: none;
+}
+
+.admin-combobox-item:hover {
+    background: rgba(235, 175, 0, 0.1);
+    color: var(--mtech-yellow);
+}
+
+/* Item destacado pela navegação por teclado */
+.admin-combobox-item.selecionado {
+    background: rgba(235, 175, 0, 0.15);
+    color: var(--mtech-yellow);
+    font-weight: 600;
+    border-left: 3px solid var(--mtech-yellow);
+    padding-left: 12px;
+}
+
+/* Scroll customizado */
+.admin-combobox-lista::-webkit-scrollbar {
+    width: 8px;
+}
+
+.admin-combobox-lista::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-combobox-lista::-webkit-scrollbar-thumb {
+    background: var(--mtech-border);
+    border-radius: 4px;
+}
+
+.admin-combobox-lista::-webkit-scrollbar-thumb:hover {
+    background: var(--mtech-text-muted);
+}
