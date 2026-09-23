@@ -83,9 +83,10 @@ if ($status === 'aprovado') {
     $obs = 'Pagamento via ' . $forma . ($transacao_id !== '' ? ' — Transação: ' . $transacao_id : '');
     $stmt = $conn->prepare("
         INSERT INTO os_orcamento_pagamentos
-        (id_orcamento, forma, valor, parcelas, status, data_pagamento, observacoes, id_usuario_registrou)
-        VALUES (?, ?, ?, 1, 'confirmado', NOW(), ?, 1)
+        (id_orcamento, forma, valor, parcelas, status, data_pagamento, observacoes, id_usuario_registrou, origem)
+        VALUES (?, ?, ?, 1, 'confirmado', NOW(), ?, 1, 'webhook')
     ");
+    $stmt->bind_param('isds', $o['id_orcamento'], $forma, $valor, $obs);
     $stmt->bind_param('isds', $o['id_orcamento'], $forma, $valor, $obs);
     $stmt->execute();
     $stmt->close();

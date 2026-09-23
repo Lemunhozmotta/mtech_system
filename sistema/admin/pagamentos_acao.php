@@ -32,7 +32,7 @@ if ($acao === 'registrar') {
     $data_vencimento = trim($_POST['data_vencimento'] ?? '');
     $observacoes = trim($_POST['observacoes'] ?? '');
 
-    $formas_validas = ['pix', 'cartao_credito', 'cartao_debito', 'dinheiro', 'transferencia', 'boleto'];
+    $formas_validas = ['pix', 'dinheiro', 'credito', 'debito', 'transferencia', 'boleto'];
 
     if (!in_array($forma, $formas_validas) || $valor <= 0) {
         $conn->close();
@@ -90,9 +90,10 @@ if ($acao === 'registrar') {
     // Insere pagamento
     $stmt = $conn->prepare("
         INSERT INTO os_orcamento_pagamentos
-        (id_orcamento, forma, valor, parcelas, status, data_pagamento, observacoes, id_usuario_registrou)
-        VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)
+        (id_orcamento, forma, valor, parcelas, status, data_pagamento, observacoes, id_usuario_registrou, origem)
+        VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, 'manual')
     ");
+    $stmt->bind_param('isdissi', $id_orcamento, $forma, $valor, $parcelas, $status_pag, $obs_val, $idUsuario);
     $stmt->bind_param('isdissi', $id_orcamento, $forma, $valor, $parcelas, $status_pag, $obs_val, $idUsuario);
     $stmt->execute();
     $stmt->close();

@@ -96,9 +96,9 @@ $conn->close();
                         value="<?php echo $carro_pre ? (int)$carro_pre['id_cliente'] : ''; ?>">
 
                     <?php if ($id_carro_pre > 0): ?>
-                        <a href="ordens_novo.php" class="admin-btn-icone" title="Trocar veículo">
-                            <i class="fas fa-times"></i>
-                        </a>
+                    <a href="ordens_novo.php" class="admin-btn-icone" title="Trocar veículo">
+                        <i class="fas fa-times"></i>
+                    </a>
                     <?php endif; ?>
 
                     <div id="listaCarros" class="admin-autocomplete-lista" style="display: none;"></div>
@@ -107,24 +107,24 @@ $conn->close();
             </div>
 
             <?php if (!$souMecanico): ?>
-                <div class="admin-form-campo">
-                    <label for="id_mecanico">Mecânico responsável</label>
-                    <select id="id_mecanico" name="id_mecanico">
-                        <option value="">— A definir —</option>
-                        <?php foreach ($mecanicos as $mec): ?>
-                            <option value="<?php echo (int)$mec['id_usuario']; ?>">
-                                <?php echo limpar($mec['nome']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+            <div class="admin-form-campo">
+                <label for="id_mecanico">Mecânico responsável</label>
+                <select id="id_mecanico" name="id_mecanico">
+                    <option value="">— A definir —</option>
+                    <?php foreach ($mecanicos as $mec): ?>
+                    <option value="<?php echo (int)$mec['id_usuario']; ?>">
+                        <?php echo limpar($mec['nome']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
             <?php else: ?>
-                <div class="admin-form-campo">
-                    <label>Mecânico responsável</label>
-                    <input type="text" value="<?php echo limpar($usuarioLogado['nome']); ?>" disabled>
-                    <small class="admin-dica">Você abre a OS. O apontamento você faz depois, quando começar a
-                        trabalhar.</small>
-                </div>
+            <div class="admin-form-campo">
+                <label>Mecânico responsável</label>
+                <input type="text" value="<?php echo limpar($usuarioLogado['nome']); ?>" disabled>
+                <small class="admin-dica">Você abre a OS. O apontamento você faz depois, quando começar a
+                    trabalhar.</small>
+            </div>
             <?php endif; ?>
 
             <div class="admin-form-campo">
@@ -159,33 +159,33 @@ $conn->close();
 </form>
 
 <script>
-    (function() {
-        const carros =
-            <?php echo json_encode($carros ?: [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-        const campoBusca = document.getElementById('busca_carro');
-        const campoIdCarro = document.getElementById('id_carro');
-        const campoIdCliente = document.getElementById('id_cliente');
-        const listaCarros = document.getElementById('listaCarros');
+(function() {
+    const carros =
+        <?php echo json_encode($carros ?: [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const campoBusca = document.getElementById('busca_carro');
+    const campoIdCarro = document.getElementById('id_carro');
+    const campoIdCliente = document.getElementById('id_cliente');
+    const listaCarros = document.getElementById('listaCarros');
 
-        function normalizar(t) {
-            return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-        }
+    function normalizar(t) {
+        return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    }
 
-        if (campoBusca && !campoBusca.disabled) {
-            function mostrarCarros(termo) {
-                const t = normalizar(termo);
-                const filtrados = carros.filter(c => {
-                    const alvo = normalizar(c.placa + ' ' + c.marca + ' ' + c.modelo + ' ' + (c.ano || '') +
-                        ' ' + c.cliente_nome);
-                    return alvo.includes(t);
-                }).slice(0, 10);
+    if (campoBusca && !campoBusca.disabled) {
+        function mostrarCarros(termo) {
+            const t = normalizar(termo);
+            const filtrados = carros.filter(c => {
+                const alvo = normalizar(c.placa + ' ' + c.marca + ' ' + c.modelo + ' ' + (c.ano || '') +
+                    ' ' + c.cliente_nome);
+                return alvo.includes(t);
+            }).slice(0, 10);
 
-                if (filtrados.length === 0) {
-                    listaCarros.style.display = 'none';
-                    return;
-                }
+            if (filtrados.length === 0) {
+                listaCarros.style.display = 'none';
+                return;
+            }
 
-                listaCarros.innerHTML = filtrados.map(c => `
+            listaCarros.innerHTML = filtrados.map(c => `
                     <div class="admin-autocomplete-item"
                          data-id="${c.id_carro}"
                          data-cliente="${c.id_cliente}"
@@ -195,106 +195,106 @@ $conn->close();
                     </div>
                 `).join('');
 
-                listaCarros.style.display = 'block';
+            listaCarros.style.display = 'block';
 
-                listaCarros.querySelectorAll('.admin-autocomplete-item').forEach(item => {
-                    item.addEventListener('mousedown', (e) => {
-                        e.preventDefault();
-                        selecionarCarro(item);
-                    });
+            listaCarros.querySelectorAll('.admin-autocomplete-item').forEach(item => {
+                item.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    selecionarCarro(item);
                 });
-            }
-
-            function selecionarCarro(item) {
-                campoBusca.value = item.dataset.texto;
-                campoIdCarro.value = item.dataset.id;
-                campoIdCliente.value = item.dataset.cliente;
-                listaCarros.style.display = 'none';
-                listaCarros.querySelectorAll('.admin-autocomplete-item').forEach(i => i.classList.remove(
-                    'selecionado'));
-            }
-
-            function limparDestaques() {
-                listaCarros.querySelectorAll('.admin-autocomplete-item').forEach(i => i.classList.remove(
-                    'selecionado'));
-            }
-
-            campoBusca.addEventListener('input', () => {
-                const termo = campoBusca.value.trim();
-                if (campoIdCarro.value) {
-                    campoIdCarro.value = '';
-                    campoIdCliente.value = '';
-                }
-                if (termo.length < 2) {
-                    listaCarros.style.display = 'none';
-                    return;
-                }
-                mostrarCarros(termo);
-            });
-
-            campoBusca.addEventListener('blur', () => {
-                setTimeout(() => {
-                    listaCarros.style.display = 'none';
-                    limparDestaques();
-                }, 200);
-            });
-
-            campoBusca.addEventListener('focus', () => {
-                if (campoBusca.value.trim().length >= 2) mostrarCarros(campoBusca.value.trim());
-            });
-
-            campoBusca.addEventListener('keydown', (e) => {
-                const itens = listaCarros.querySelectorAll('.admin-autocomplete-item');
-                const aberto = listaCarros.style.display === 'block';
-
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    if (!aberto && itens.length > 0) listaCarros.style.display = 'block';
-                    if (itens.length === 0) return;
-                    let idx = Array.from(itens).findIndex(i => i.classList.contains('selecionado'));
-                    limparDestaques();
-                    idx = (idx + 1) % itens.length;
-                    itens[idx].classList.add('selecionado');
-                    itens[idx].scrollIntoView({
-                        block: 'nearest'
-                    });
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    if (!aberto && itens.length > 0) listaCarros.style.display = 'block';
-                    if (itens.length === 0) return;
-                    let idx = Array.from(itens).findIndex(i => i.classList.contains('selecionado'));
-                    limparDestaques();
-                    idx = idx <= 0 ? itens.length - 1 : idx - 1;
-                    itens[idx].classList.add('selecionado');
-                    itens[idx].scrollIntoView({
-                        block: 'nearest'
-                    });
-                } else if (e.key === 'Enter') {
-                    const dest = listaCarros.querySelector('.admin-autocomplete-item.selecionado');
-                    if (dest) {
-                        e.preventDefault();
-                        selecionarCarro(dest);
-                    }
-                } else if (e.key === 'Escape') {
-                    if (aberto) {
-                        e.preventDefault();
-                        listaCarros.style.display = 'none';
-                        limparDestaques();
-                    }
-                } else if (e.key === 'Tab') {
-                    listaCarros.style.display = 'none';
-                }
             });
         }
 
-        document.getElementById('formOS').addEventListener('submit', (e) => {
-            if (!campoIdCarro.value) {
+        function selecionarCarro(item) {
+            campoBusca.value = item.dataset.texto;
+            campoIdCarro.value = item.dataset.id;
+            campoIdCliente.value = item.dataset.cliente;
+            listaCarros.style.display = 'none';
+            listaCarros.querySelectorAll('.admin-autocomplete-item').forEach(i => i.classList.remove(
+                'selecionado'));
+        }
+
+        function limparDestaques() {
+            listaCarros.querySelectorAll('.admin-autocomplete-item').forEach(i => i.classList.remove(
+                'selecionado'));
+        }
+
+        campoBusca.addEventListener('input', () => {
+            const termo = campoBusca.value.trim();
+            if (campoIdCarro.value) {
+                campoIdCarro.value = '';
+                campoIdCliente.value = '';
+            }
+            if (termo.length < 2) {
+                listaCarros.style.display = 'none';
+                return;
+            }
+            mostrarCarros(termo);
+        });
+
+        campoBusca.addEventListener('blur', () => {
+            setTimeout(() => {
+                listaCarros.style.display = 'none';
+                limparDestaques();
+            }, 200);
+        });
+
+        campoBusca.addEventListener('focus', () => {
+            if (campoBusca.value.trim().length >= 2) mostrarCarros(campoBusca.value.trim());
+        });
+
+        campoBusca.addEventListener('keydown', (e) => {
+            const itens = listaCarros.querySelectorAll('.admin-autocomplete-item');
+            const aberto = listaCarros.style.display === 'block';
+
+            if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                alert('Selecione um veículo da lista.');
-                campoBusca.focus();
+                if (!aberto && itens.length > 0) listaCarros.style.display = 'block';
+                if (itens.length === 0) return;
+                let idx = Array.from(itens).findIndex(i => i.classList.contains('selecionado'));
+                limparDestaques();
+                idx = (idx + 1) % itens.length;
+                itens[idx].classList.add('selecionado');
+                itens[idx].scrollIntoView({
+                    block: 'nearest'
+                });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (!aberto && itens.length > 0) listaCarros.style.display = 'block';
+                if (itens.length === 0) return;
+                let idx = Array.from(itens).findIndex(i => i.classList.contains('selecionado'));
+                limparDestaques();
+                idx = idx <= 0 ? itens.length - 1 : idx - 1;
+                itens[idx].classList.add('selecionado');
+                itens[idx].scrollIntoView({
+                    block: 'nearest'
+                });
+            } else if (e.key === 'Enter') {
+                const dest = listaCarros.querySelector('.admin-autocomplete-item.selecionado');
+                if (dest) {
+                    e.preventDefault();
+                    selecionarCarro(dest);
+                }
+            } else if (e.key === 'Escape') {
+                if (aberto) {
+                    e.preventDefault();
+                    listaCarros.style.display = 'none';
+                    limparDestaques();
+                }
+            } else if (e.key === 'Tab') {
+                listaCarros.style.display = 'none';
             }
         });
-    })();
+    }
+
+    document.getElementById('formOS').addEventListener('submit', (e) => {
+        if (!campoIdCarro.value) {
+            e.preventDefault();
+            alert('Selecione um veículo da lista.');
+            campoBusca.focus();
+        }
+    });
+})();
 </script>
 
 <?php require_once '_footer.php'; ?>
