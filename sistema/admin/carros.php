@@ -6,6 +6,8 @@
 $titulo_pagina = 'Carros';
 require_once '_header.php';
 
+$polling_ativo = true;
+
 // ===== PEGA O USUÁRIO LOGADO =====
 $usuarioLogado = usuarioLogado();
 $podeDesativar = in_array($usuarioLogado['nivel'], [1, 2]);

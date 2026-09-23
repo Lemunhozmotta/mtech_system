@@ -1384,3 +1384,153 @@ html.light .admin-btn-secundario:hover {
 .admin-combobox-lista::-webkit-scrollbar-thumb:hover {
     background: var(--mtech-text-muted);
 }
+
+/* =========================================================
+   MÓDULO OS — APONTAMENTO / SOLICITAÇÃO (extras)
+   ========================================================= */
+
+/* Badge de apontado na lista de OS */
+.admin-badge i.fa-user-check {
+    margin-right: 2px;
+}
+
+/* Botões de ação em linha dentro de um bloco */
+.admin-bloco .admin-btn+.admin-btn {
+    margin-left: 0;
+}
+
+/* Espaçamento do select de mecânico no modal */
+#modalApontar select {
+    width: 100%;
+    padding: 12px 14px;
+    background-color: var(--mtech-bg);
+    color: var(--mtech-text);
+    border: 1px solid var(--mtech-border);
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#modalApontar select:focus {
+    border-color: var(--mtech-red);
+    box-shadow: 0 0 0 3px rgba(214, 45, 45, 0.15);
+}
+
+/* Textarea desabilitada (campos read-only do ordens_ver) */
+.admin-form-campo textarea:disabled,
+.admin-form-campo input:disabled {
+    opacity: 0.85;
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   TOAST DE ATUALIZAÇÃO (polling)
+   ========================================================= */
+
+.admin-toast-atualizacao {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: var(--mtech-card);
+    border: 1px solid var(--mtech-yellow);
+    border-left: 4px solid var(--mtech-yellow);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--mtech-text);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+    max-width: 90vw;
+}
+
+.admin-toast-atualizacao.ativo {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.admin-toast-atualizacao>i.fa-sync-alt {
+    color: var(--mtech-yellow);
+    font-size: 18px;
+    animation: girarToast 2s linear infinite;
+}
+
+@keyframes girarToast {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.admin-toast-atualizacao>span {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.admin-toast-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--mtech-yellow);
+    color: #161616;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.admin-toast-btn:hover {
+    background: var(--mtech-yellow-hover);
+    transform: translateY(-1px);
+}
+
+.admin-toast-fechar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    color: var(--mtech-text-muted);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.admin-toast-fechar:hover {
+    background: rgba(214, 45, 45, 0.15);
+    color: var(--mtech-red);
+}
+
+@media (max-width: 600px) {
+    .admin-toast-atualizacao {
+        left: 15px;
+        right: 15px;
+        bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .admin-toast-atualizacao>span {
+        white-space: normal;
+    }
+}

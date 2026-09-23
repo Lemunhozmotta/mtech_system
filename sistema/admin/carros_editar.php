@@ -143,7 +143,7 @@ $conn->close();
             <div class="admin-form-campo admin-form-campo-full">
                 <label for="observacoes">Observações / Avarias do veículo</label>
                 <textarea id="observacoes" name="observacoes" rows="4"
-                    placeholder="Preencha este campo dizendo se o veículo tem alguma avaria e quais são, tanto externa como internamente!"></textarea>
+                    placeholder="Preencha este campo dizendo se o veículo tem alguma avaria e quais são, tanto externa como internamente!"><?php echo limpar($car['observacoes'] ?? ''); ?></textarea>
             </div>
         </div>
     </div>

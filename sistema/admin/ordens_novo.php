@@ -1,6 +1,9 @@
 <?php
 /* =========================================================
    M-TECH SYSTEM — ORDENS DE SERVIÇO (nova)
+   - Níveis 1, 2, 3, 4 abrem OS
+   - Nível 3 (mecânico): abre OS aberta, ele se aponta depois
+   - Níveis 1, 2, 4: escolhem o mecânico responsável
    ========================================================= */
 
 $titulo_pagina = 'Nova OS';
@@ -9,6 +12,17 @@ require_once '_header.php';
 $usuarioLogado = usuarioLogado();
 $conn = conectar();
 
+// ===== PERMISSÃO: RH (5) NÃO ABRE OS =====
+$nivel = (int)$usuarioLogado['nivel'];
+if (!in_array($nivel, [1, 2, 3, 4])) {
+    $conn->close();
+    redirecionar('ordens.php?msg=sem_permissao');
+}
+
+// ===== MECÂNICO (3) NÃO ESCOLHE RESPONSÁVEL =====
+$souMecanico = ($nivel === 3);
+
+// ===== PRÉ-SELEÇÃO POR id_carro (vindo da ficha do carro) =====
 $id_carro_pre = (int)($_GET['id_carro'] ?? 0);
 $carro_pre = null;
 $cliente_pre_nome = '';
@@ -32,6 +46,7 @@ if ($id_carro_pre > 0) {
     }
 }
 
+// ===== CARROS DISPONÍVEIS =====
 $sql_carros = "SELECT cr.id_carro, cr.marca, cr.modelo, cr.placa, cr.ano,
                       cl.nome AS cliente_nome, cl.id_cliente
                FROM carros cr
@@ -41,8 +56,12 @@ $sql_carros = "SELECT cr.id_carro, cr.marca, cr.modelo, cr.placa, cr.ano,
 $res_carros = $conn->query($sql_carros);
 $carros = $res_carros->fetch_all(MYSQLI_ASSOC);
 
-$res_mec = $conn->query("SELECT id_usuario, nome FROM usuarios WHERE ativo = 1 AND nivel = 3 ORDER BY nome ASC");
-$mecanicos = $res_mec->fetch_all(MYSQLI_ASSOC);
+// ===== MECÂNICOS (só pros níveis 1, 2, 4) =====
+$mecanicos = [];
+if (!$souMecanico) {
+    $res_mec = $conn->query("SELECT id_usuario, nome FROM usuarios WHERE ativo = 1 AND nivel = 3 ORDER BY nome ASC");
+    $mecanicos = $res_mec->fetch_all(MYSQLI_ASSOC);
+}
 
 $conn->close();
 ?>
@@ -87,17 +106,26 @@ $conn->close();
                 <small class="admin-dica">Digite pelo menos 2 letras da placa, modelo ou nome do cliente.</small>
             </div>
 
-            <div class="admin-form-campo">
-                <label for="id_mecanico">Mecânico responsável</label>
-                <select id="id_mecanico" name="id_mecanico">
-                    <option value="">— A definir —</option>
-                    <?php foreach ($mecanicos as $mec): ?>
-                        <option value="<?php echo (int)$mec['id_usuario']; ?>">
-                            <?php echo limpar($mec['nome']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <?php if (!$souMecanico): ?>
+                <div class="admin-form-campo">
+                    <label for="id_mecanico">Mecânico responsável</label>
+                    <select id="id_mecanico" name="id_mecanico">
+                        <option value="">— A definir —</option>
+                        <?php foreach ($mecanicos as $mec): ?>
+                            <option value="<?php echo (int)$mec['id_usuario']; ?>">
+                                <?php echo limpar($mec['nome']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php else: ?>
+                <div class="admin-form-campo">
+                    <label>Mecânico responsável</label>
+                    <input type="text" value="<?php echo limpar($usuarioLogado['nome']); ?>" disabled>
+                    <small class="admin-dica">Você abre a OS. O apontamento você faz depois, quando começar a
+                        trabalhar.</small>
+                </div>
+            <?php endif; ?>
 
             <div class="admin-form-campo">
                 <label for="data_previsao">Previsão de entrega</label>
@@ -146,12 +174,9 @@ $conn->close();
         if (campoBusca && !campoBusca.disabled) {
             function mostrarCarros(termo) {
                 const t = normalizar(termo);
-
                 const filtrados = carros.filter(c => {
-                    const alvo = normalizar(
-                        c.placa + ' ' + c.marca + ' ' + c.modelo + ' ' + (c.ano || '') + ' ' + c
-                        .cliente_nome
-                    );
+                    const alvo = normalizar(c.placa + ' ' + c.marca + ' ' + c.modelo + ' ' + (c.ano || '') +
+                        ' ' + c.cliente_nome);
                     return alvo.includes(t);
                 }).slice(0, 10);
 
@@ -161,14 +186,14 @@ $conn->close();
                 }
 
                 listaCarros.innerHTML = filtrados.map(c => `
-                <div class="admin-autocomplete-item"
-                     data-id="${c.id_carro}"
-                     data-cliente="${c.id_cliente}"
-                     data-texto="${(c.marca + ' ' + c.modelo + ' (' + c.placa.toUpperCase() + ') — ' + c.cliente_nome).replace(/"/g, '&quot;')}">
-                    <strong>${c.marca} ${c.modelo} — ${c.placa.toUpperCase()}</strong>
-                    <small>${c.cliente_nome}</small>
-                </div>
-            `).join('');
+                    <div class="admin-autocomplete-item"
+                         data-id="${c.id_carro}"
+                         data-cliente="${c.id_cliente}"
+                         data-texto="${(c.marca + ' ' + c.modelo + ' (' + c.placa.toUpperCase() + ') — ' + c.cliente_nome).replace(/"/g, '&quot;')}">
+                        <strong>${c.marca} ${c.modelo} — ${c.placa.toUpperCase()}</strong>
+                        <small>${c.cliente_nome}</small>
+                    </div>
+                `).join('');
 
                 listaCarros.style.display = 'block';
 
@@ -218,7 +243,6 @@ $conn->close();
                 if (campoBusca.value.trim().length >= 2) mostrarCarros(campoBusca.value.trim());
             });
 
-            // ===== NAVEGAÇÃO POR TECLADO =====
             campoBusca.addEventListener('keydown', (e) => {
                 const itens = listaCarros.querySelectorAll('.admin-autocomplete-item');
                 const aberto = listaCarros.style.display === 'block';
@@ -227,7 +251,6 @@ $conn->close();
                     e.preventDefault();
                     if (!aberto && itens.length > 0) listaCarros.style.display = 'block';
                     if (itens.length === 0) return;
-
                     let idx = Array.from(itens).findIndex(i => i.classList.contains('selecionado'));
                     limparDestaques();
                     idx = (idx + 1) % itens.length;
@@ -239,7 +262,6 @@ $conn->close();
                     e.preventDefault();
                     if (!aberto && itens.length > 0) listaCarros.style.display = 'block';
                     if (itens.length === 0) return;
-
                     let idx = Array.from(itens).findIndex(i => i.classList.contains('selecionado'));
                     limparDestaques();
                     idx = idx <= 0 ? itens.length - 1 : idx - 1;
