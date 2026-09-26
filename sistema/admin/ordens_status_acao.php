@@ -1,13 +1,11 @@
 <?php
 /* =========================================================
    M-TECH SYSTEM — ORDENS DE SERVIÇO (mudar status)
-   Ações de transição do fluxo novo:
-   - iniciar_separacao  → aprovado → aguardando_peca
-   - pecas_chegaram     → aguardando_peca → em_execucao
-   - marcar_pronta      → em_execucao → pronta (ou aguardando_pagamento/retirada)
-   - aguardando_retirada → pronta → aguardando_retirada
+   Ações do fluxo novo:
+   - pecas_chegaram     → aguardando_peca → em_andamento
+   - marcar_pronta      → em_execucao/pronta → pronta
    - cliente_retirou    → aguardando_retirada → concluida
-   - concluir           → em_execucao → concluida (atalho legado)
+   - concluir           → em_execucao/em_andamento → concluida (atalho)
    - cancelar           → qualquer (antes de pronta) → cancelada
    ========================================================= */
 
@@ -53,7 +51,7 @@ if (in_array($status_atual, ['concluida', 'cancelada'])) {
 // =========================================================
 // HELPER: mudar status e redirecionar
 // =========================================================
-function mudarStatus($conn, $id_os, $novo_status, $msg)
+function mudarStatusSimples($conn, $id_os, $novo_status, $msg)
 {
     $stmt = $conn->prepare("UPDATE ordens_servico SET status = ? WHERE id_os = ?");
     $stmt->bind_param('si', $novo_status, $id_os);
@@ -65,27 +63,7 @@ function mudarStatus($conn, $id_os, $novo_status, $msg)
 }
 
 // =========================================================
-// INICIAR SEPARAÇÃO (aprovado → aguardando_peca)
-// =========================================================
-if ($acao === 'iniciar_separacao') {
-
-    if (!in_array($nivel, [1, 2])) {
-        $conn->close();
-        header('Location: ordens_ver.php?id=' . $id_os . '&msg=sem_permissao');
-        exit;
-    }
-
-    if ($status_atual !== 'aprovado') {
-        $conn->close();
-        header('Location: ordens_ver.php?id=' . $id_os . '&msg=erro');
-        exit;
-    }
-
-    mudarStatus($conn, $id_os, 'aguardando_peca', 'separacao_iniciada');
-}
-
-// =========================================================
-// PEÇAS CHEGARAM (aguardando_peca → em_execucao)
+// PEÇAS CHEGARAM (aguardando_peca → em_andamento)
 // =========================================================
 if ($acao === 'pecas_chegaram') {
 
@@ -101,11 +79,12 @@ if ($acao === 'pecas_chegaram') {
         exit;
     }
 
-    mudarStatus($conn, $id_os, 'em_execucao', 'pecas_chegaram');
+    // Muda pra em_andamento — mecânico se aponta depois pra virar em_execucao
+    mudarStatusSimples($conn, $id_os, 'em_andamento', 'pecas_chegaram');
 }
 
 // =========================================================
-// MARCAR COMO PRONTA (em_execucao → pronta → decide próximo)
+// MARCAR COMO PRONTA (em_execucao → pronta → decide retirada/pagamento)
 // =========================================================
 if ($acao === 'marcar_pronta') {
 
@@ -121,6 +100,22 @@ if ($acao === 'marcar_pronta') {
         exit;
     }
 
+    // Se for mecânico, precisa estar apontado
+    if ($nivel === 3) {
+        $stmt = $conn->prepare("SELECT id_apontamento FROM os_apontamentos
+                                WHERE id_os = ? AND id_usuario = ? AND data_desapontamento IS NULL LIMIT 1");
+        $stmt->bind_param('ii', $id_os, $idUsuario);
+        $stmt->execute();
+        $ap = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$ap) {
+            $conn->close();
+            header('Location: ordens_ver.php?id=' . $id_os . '&msg=nao_apontado');
+            exit;
+        }
+    }
+
     // Desaponta quem estiver apontado
     $conn->query("UPDATE os_apontamentos
                   SET data_desapontamento = NOW(), id_usuario_desapontou = {$idUsuario}
@@ -133,9 +128,8 @@ if ($acao === 'marcar_pronta') {
     $stmt->close();
 
     // ===== DECIDE O PRÓXIMO STATUS BASEADO NO PAGAMENTO =====
-    // Pega o orçamento principal da OS
     $stmt = $conn->prepare("SELECT id_orcamento FROM os_orcamentos
-                            WHERE id_os = ? AND id_orcamento_pai IS NULL
+                            WHERE id_os = ?
                             ORDER BY id_orcamento DESC LIMIT 1");
     $stmt->bind_param('i', $id_os);
     $stmt->execute();
@@ -152,10 +146,9 @@ if ($acao === 'marcar_pronta') {
             header('Location: ordens_ver.php?id=' . $id_os . '&msg=pronta_retirada');
             exit;
         } else {
-            // Ainda tem saldo → aguardando_pagamento
-            $conn->query("UPDATE ordens_servico SET status = 'aguardando_pagamento' WHERE id_os = {$id_os}");
+            // Ainda tem saldo → fica em pronta
             $conn->close();
-            header('Location: ordens_ver.php?id=' . $id_os . '&msg=pronta_pagamento');
+            header('Location: ordens_ver.php?id=' . $id_os . '&msg=pronta');
             exit;
         }
     }
@@ -163,26 +156,6 @@ if ($acao === 'marcar_pronta') {
     $conn->close();
     header('Location: ordens_ver.php?id=' . $id_os . '&msg=pronta');
     exit;
-}
-
-// =========================================================
-// AGUARDANDO RETIRADA (pronta → aguardando_retirada)
-// =========================================================
-if ($acao === 'aguardando_retirada') {
-
-    if (!in_array($nivel, [1, 2])) {
-        $conn->close();
-        header('Location: ordens_ver.php?id=' . $id_os . '&msg=sem_permissao');
-        exit;
-    }
-
-    if ($status_atual !== 'pronta') {
-        $conn->close();
-        header('Location: ordens_ver.php?id=' . $id_os . '&msg=erro');
-        exit;
-    }
-
-    mudarStatus($conn, $id_os, 'aguardando_retirada', 'aguardando_retirada');
 }
 
 // =========================================================
@@ -206,13 +179,17 @@ if ($acao === 'cliente_retirou') {
     $stmt->bind_param('i', $id_os);
     $stmt->execute();
     $stmt->close();
+
+    // Arquiva o orçamento
+    $conn->query("UPDATE os_orcamentos SET status = 'arquivado' WHERE id_os = {$id_os}");
+
     $conn->close();
     header('Location: ordens_ver.php?id=' . $id_os . '&msg=concluida');
     exit;
 }
 
 // =========================================================
-// CONCLUIR (atalho legado — em_execucao/pronta → concluida)
+// CONCLUIR (atalho — em_andamento/em_execucao/pronta → concluida)
 // =========================================================
 if ($acao === 'concluir') {
 
@@ -247,6 +224,8 @@ if ($acao === 'concluir') {
     $stmt->execute();
     $stmt->close();
 
+    $conn->query("UPDATE os_orcamentos SET status = 'arquivado' WHERE id_os = {$id_os}");
+
     $conn->close();
     header('Location: ordens_ver.php?id=' . $id_os . '&msg=concluida');
     exit;
@@ -264,7 +243,7 @@ if ($acao === 'cancelar') {
     }
 
     // Não pode cancelar depois de pronta
-    if (in_array($status_atual, ['pronta', 'aguardando_pagamento', 'aguardando_retirada'])) {
+    if (in_array($status_atual, ['pronta', 'aguardando_retirada'])) {
         $conn->close();
         header('Location: ordens_ver.php?id=' . $id_os . '&msg=sem_permissao');
         exit;
@@ -285,6 +264,9 @@ if ($acao === 'cancelar') {
     }
     $stmt->execute();
     $stmt->close();
+
+    // Cancela o orçamento também
+    $conn->query("UPDATE os_orcamentos SET status = 'cancelado' WHERE id_os = {$id_os}");
 
     $conn->close();
     header('Location: ordens_ver.php?id=' . $id_os . '&msg=cancelada');

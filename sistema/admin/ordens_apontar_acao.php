@@ -1,14 +1,11 @@
 <?php
 /* =========================================================
    M-TECH SYSTEM — APONTAR / DESAPONTAR MECÂNICO
-   Regras:
-   - Mecânico (3): só se aponta em si mesmo
-   - Admin (1) e Financeiro (2): apontam qualquer mecânico
-   - 1 mecânico só pode estar em 1 OS por vez
-   - Apontar muda status pra 'em_andamento' (se estava 'aberta')
-   - Desapontar: usa decidirStatusAposDesapontar() — se tem solicitação não resolvida → 'aguardando_aprovacao'
-                 senão → 'em_andamento'
-                 senão → 'em_andamento'
+   Regras do fluxo novo:
+   - Só pode apontar em OS com status 'aberta' ou 'em_andamento'
+   - Ao apontar: se tem peça entregue → em_execucao, senão → em_andamento
+   - Ao desapontar: se tem solicitação não resolvida → aguardando_aprovacao
+                    senão → em_andamento
    ========================================================= */
 
 require_once '../conexao.php';
@@ -35,13 +32,9 @@ $stmt->execute();
 $os = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-
-if (!$os || in_array($os['status'], ['concluida', 'cancelada', 'pronta', 'aguardando_retirada'])) 
-
-if (!$os || in_array($os['status'], ['concluida', 'cancelada'])) {
-
+if (!$os) {
     $conn->close();
-    header('Location: ordens_ver.php?id=' . $id_os . '&msg=sem_permissao');
+    header('Location: ordens.php?msg=erro');
     exit;
 }
 
@@ -50,6 +43,14 @@ if (!$os || in_array($os['status'], ['concluida', 'cancelada'])) {
 // =========================================================
 if ($acao === 'apontar') {
 
+    // ===== SÓ PODE APONTAR EM 'aberta' OU 'em_andamento' =====
+    if (!statusPermiteApontamento($os['status'])) {
+        $conn->close();
+        header('Location: ordens_ver.php?id=' . $id_os . '&msg=nao_pode_apontar');
+        exit;
+    }
+
+    // ===== DEFINE QUEM VAI SER APONTADO =====
     if ($nivel === 3) {
         $id_mecanico = $idUsuario;
     } elseif (in_array($nivel, [1, 2])) {
@@ -65,7 +66,7 @@ if ($acao === 'apontar') {
         exit;
     }
 
-    // Já tem alguém apontado nesta OS?
+    // ===== JÁ TEM ALGUÉM APONTADO NESTA OS? =====
     $stmt = $conn->prepare("SELECT id_apontamento FROM os_apontamentos
                             WHERE id_os = ? AND data_desapontamento IS NULL LIMIT 1");
     $stmt->bind_param('i', $id_os);
@@ -78,7 +79,7 @@ if ($acao === 'apontar') {
     }
     $stmt->close();
 
-    // Mecânico já está apontado em outra OS?
+    // ===== MECÂNICO JÁ ESTÁ EM OUTRA OS? =====
     $stmt = $conn->prepare("SELECT id_os FROM os_apontamentos
                             WHERE id_usuario = ? AND data_desapontamento IS NULL LIMIT 1");
     $stmt->bind_param('i', $id_mecanico);
@@ -92,7 +93,7 @@ if ($acao === 'apontar') {
         exit;
     }
 
-    // Insere o apontamento
+    // ===== INSERE O APONTAMENTO =====
     $stmt = $conn->prepare("INSERT INTO os_apontamentos (id_os, id_usuario, apontado_por)
                             VALUES (?, ?, ?)");
     $stmt->bind_param('iii', $id_os, $id_mecanico, $idUsuario);
@@ -105,19 +106,13 @@ if ($acao === 'apontar') {
     }
     $stmt->close();
 
+    // ===== DECIDE O NOVO STATUS =====
+    $novo_status = decidirStatusAposApontar($conn, $id_os);
 
-    // Status → em_andamento (se não estiver)
-    $status_em_andamento = ['aberta', 'aguardando_peca', 'aguardando_aprovacao', 'aprovado'];
-    if (in_array($os['status'], $status_em_andamento)) {
-
-    // Status → em_andamento
-    if ($os['status'] === 'aberta' || $os['status'] === 'aguardando_peca' || $os['status'] === 'aguardando_aprovacao') {
-
-        $conn->query("UPDATE ordens_servico SET status = 'em_andamento' WHERE id_os = {$id_os}");
-    }
-
-    // Atualiza id_mecanico da OS
-    $conn->query("UPDATE ordens_servico SET id_mecanico = {$id_mecanico} WHERE id_os = {$id_os}");
+    $stmt = $conn->prepare("UPDATE ordens_servico SET status = ?, id_mecanico = ? WHERE id_os = ?");
+    $stmt->bind_param('sii', $novo_status, $id_mecanico, $id_os);
+    $stmt->execute();
+    $stmt->close();
 
     $conn->close();
     header('Location: ordens_ver.php?id=' . $id_os . '&msg=apontado');
@@ -155,29 +150,21 @@ if ($acao === 'desapontar') {
         exit;
     }
 
-
-    // ===== DECIDE O PRÓXIMO STATUS =====
-    $proximo_status = decidirStatusAposDesapontar($conn, $id_os);
-    $conn->query("UPDATE ordens_servico SET status = '{$proximo_status}' WHERE id_os = {$id_os}");
-
-    // ===== CONTA SOLICITAÇÕES NÃO RESOLVIDAS =====
-    $stmt = $conn->prepare("
-        SELECT COUNT(*) AS total FROM os_solicitacoes_peca
-        WHERE id_os = ? AND status IN ('pendente','aprovada_estoque','aprovada_compra')
-    ");
-    $stmt->bind_param('i', $id_os);
-    $stmt->execute();
-    $nao_resolvidas = (int)$stmt->get_result()->fetch_assoc()['total'];
-    $stmt->close();
-
-    // ===== APLICA O STATUS =====
-    if ($nao_resolvidas > 0) {
-        // Tem peça pedida/aprovada → OS aguarda aprovação do orçamento
-        $conn->query("UPDATE ordens_servico SET status = 'aguardando_aprovacao' WHERE id_os = {$id_os}");
-    } else {
-        $conn->query("UPDATE ordens_servico SET status = 'em_andamento' WHERE id_os = {$id_os}");
+    // ===== DECIDE O NOVO STATUS =====
+    // Se a OS tá em status final, não mexe
+    $status_finais = ['pronta', 'aguardando_retirada', 'concluida', 'cancelada'];
+    if (in_array($os['status'], $status_finais)) {
+        $conn->close();
+        header('Location: ordens_ver.php?id=' . $id_os . '&msg=desapontado');
+        exit;
     }
 
+    $novo_status = decidirStatusAposDesapontar($conn, $id_os);
+
+    $stmt = $conn->prepare("UPDATE ordens_servico SET status = ? WHERE id_os = ?");
+    $stmt->bind_param('si', $novo_status, $id_os);
+    $stmt->execute();
+    $stmt->close();
 
     $conn->close();
     header('Location: ordens_ver.php?id=' . $id_os . '&msg=desapontado');

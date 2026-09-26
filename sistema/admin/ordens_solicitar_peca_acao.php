@@ -1,11 +1,12 @@
 <?php
 /* =========================================================
    M-TECH SYSTEM — SOLICITAR PEÇAS (carrinho)
-   - Só o mecânico apontado pode solicitar
-   - Recebe ARRAY de peças
-   - NÃO desaponta
-   - Cria orçamento automático (ou adendo se já existe)
-   - Valor da peça vem do estoque quando id_estoque informado
+   Fluxo novo:
+   - Só mecânico apontado pode solicitar
+   - Valor vem do estoque quando id_estoque é informado
+   - Se OS já tem orçamento → gera ADENDO
+   - Se não tem → cria orçamento
+   - NÃO muda status da OS (o mecânico desaponta quando quiser)
    ========================================================= */
 
 require_once '../conexao.php';
@@ -46,7 +47,7 @@ $stmt->execute();
 $os = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-if (!$os || in_array($os['status'], ['concluida', 'cancelada', 'pronta', 'aguardando_pagamento', 'aguardando_retirada'])) {
+if (!$os || in_array($os['status'], ['concluida', 'cancelada', 'pronta', 'aguardando_retirada'])) {
     $conn->close();
     header('Location: ordens_ver.php?id=' . $id_os . '&msg=sem_permissao');
     exit;
@@ -91,44 +92,37 @@ if ($total_inseridas === 0) {
 }
 
 // =========================================================
-// VERIFICA SE É ADENDO OU ORÇAMENTO NOVO
+// VERIFICA SE JÁ EXISTE ORÇAMENTO NESSA OS
 // =========================================================
-$stmt = $conn->prepare("SELECT id_orcamento, status FROM os_orcamentos
+$stmt = $conn->prepare("SELECT id_orcamento, status, adendo_status FROM os_orcamentos
                         WHERE id_os = ?
-                          AND status NOT IN ('arquivado', 'recusado', 'expirado')
-                          AND id_orcamento_pai IS NULL
+                          AND status NOT IN ('arquivado', 'cancelado')
                         ORDER BY id_orcamento DESC LIMIT 1");
 $stmt->bind_param('i', $id_os);
 $stmt->execute();
-$orc_principal = $stmt->get_result()->fetch_assoc();
+$orc_existente = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 $eh_adendo = false;
+$id_orcamento = 0;
 
-if ($orc_principal) {
-    // JÁ EXISTE orçamento → é ADENDO
+if ($orc_existente) {
+    // ===== JÁ EXISTE → ADENDO =====
     $eh_adendo = true;
-    $id_orcamento_pai = (int)$orc_principal['id_orcamento'];
+    $id_orcamento = (int)$orc_existente['id_orcamento'];
 
-    $numero_adendo = $os['numero_os'] . '-AD';
-
-    $stmt = $conn->prepare("
-        INSERT INTO os_orcamentos
-        (id_os, id_orcamento_pai, numero_orcamento, status, id_usuario_criou)
-        VALUES (?, ?, ?, 'adendo_gerado', ?)
-    ");
-    $stmt->bind_param('iisi', $id_os, $id_orcamento_pai, $numero_adendo, $idUsuario);
+    $stmt = $conn->prepare("UPDATE os_orcamentos SET adendo_status = 'enviado' WHERE id_orcamento = ?");
+    $stmt->bind_param('i', $id_orcamento);
     $stmt->execute();
-    $id_orcamento = $conn->insert_id;
     $stmt->close();
 } else {
-    // NÃO existe → cria orçamento principal
+    // ===== NÃO EXISTE → CRIA ORÇAMENTO =====
     $numero_orcamento = $os['numero_os'];
 
     $stmt = $conn->prepare("
         INSERT INTO os_orcamentos
-        (id_os, numero_orcamento, status, id_usuario_criou)
-        VALUES (?, ?, 'aguardando_revisao', ?)
+        (id_os, numero_orcamento, status, adendo_status, id_usuario_criou)
+        VALUES (?, ?, 'aguardando_revisao', 'nenhum', ?)
     ");
     $stmt->bind_param('isi', $id_os, $numero_orcamento, $idUsuario);
     $stmt->execute();
@@ -140,6 +134,7 @@ if ($orc_principal) {
 // ADICIONA AS PEÇAS COMO ITENS DO ORÇAMENTO
 // =========================================================
 foreach ($ids_solicitacoes as $id_solic) {
+
     $stmt = $conn->prepare("
         SELECT nome_peca, quantidade, id_estoque FROM os_solicitacoes_peca
         WHERE id_solicitacao = ? LIMIT 1
@@ -181,18 +176,9 @@ foreach ($ids_solicitacoes as $id_solic) {
 recalcularOrcamento($conn, $id_orcamento);
 
 // =========================================================
-// ATUALIZA STATUS DA OS
+// NÃO MUDA STATUS DA OS
+// (o mecânico desaponta quando quiser, e aí sim muda)
 // =========================================================
-if ($eh_adendo) {
-    // Adendo → não muda status se o mecânico continua apontado
-    // O ordens_apontar_acao.php trata se desapontar
-} else {
-    // Orçamento principal → OS vai pra aguardando_aprovacao
-    $status_permite = ['aberta', 'em_andamento', 'aguardando_peca', 'em_execucao'];
-    if (in_array($os['status'], $status_permite)) {
-        $conn->query("UPDATE ordens_servico SET status = 'aguardando_aprovacao' WHERE id_os = {$id_os}");
-    }
-}
 
 // =========================================================
 // LIMPA O CARRINHO DA SESSÃO

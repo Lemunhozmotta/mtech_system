@@ -1,10 +1,10 @@
 <?php
 /* =========================================================
    M-TECH SYSTEM — CONEXÃO E FUNÇÕES AUXILIARES
-   VERSÃO FINAL — base pra todos os módulos
+   VERSÃO FINAL — fluxo enxuto
    ========================================================= */
 
-// ===== MODO DEBUG (trocar pra false em produção) =====
+// ===== MODO DEBUG =====
 define('DEBUG_MODE', true);
 
 if (DEBUG_MODE) {
@@ -28,7 +28,7 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', 'mtech_system');
 
-// ===== INICIA SESSÃO =====
+// ===== SESSÃO =====
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -158,131 +158,94 @@ function formatarMinutos($min)
 }
 
 /* =========================================================
-   VERIFICAÇÕES DE OS
-   ========================================================= */
-function estaApontadoNaOS($conn, $id_os, $id_usuario)
-{
-    $stmt = $conn->prepare("SELECT id_apontamento FROM os_apontamentos
-                            WHERE id_os = ? AND id_usuario = ? AND data_desapontamento IS NULL
-                            LIMIT 1");
-    $stmt->bind_param('ii', $id_os, $id_usuario);
-    $stmt->execute();
-    $r = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-    return (bool)$r;
-}
-
-function temSolicitacaoPendente($conn, $id_os)
-{
-    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM os_solicitacoes_peca
-                            WHERE id_os = ? AND status = 'pendente'");
-    $stmt->bind_param('i', $id_os);
-    $stmt->execute();
-    $r = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-    return ((int)$r['total']) > 0;
-}
-
-/* =========================================================
-   OS — GERAR PRÓXIMO NÚMERO
-   ========================================================= */
-function proximoNumeroOS($conn)
-{
-    $ano = date('Y');
-    $stmt = $conn->prepare("SELECT MAX(CAST(SUBSTRING(numero_os, 6) AS UNSIGNED)) AS ultimo
-                            FROM ordens_servico WHERE numero_os LIKE ?");
-    $like = $ano . '-%';
-    $stmt->bind_param('s', $like);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-    $proximo = ((int)($row['ultimo'] ?? 0)) + 1;
-    return $ano . '-' . str_pad($proximo, 4, '0', STR_PAD_LEFT);
-}
-
-/* =========================================================
-   STATUS DA OS
+   STATUS DA OS (9 status)
    ========================================================= */
 function nomeStatusOS($s)
 {
     return [
-        'aberta'                 => 'Aberta',
-        'em_andamento'           => 'Em Andamento',
-        'aguardando_aprovacao'   => 'Aguardando Aprovação',
-        'aprovado'               => 'Aprovada',
-        'aguardando_peca'        => 'Aguardando Peça',
-        'em_execucao'            => 'Em Execução',
-        'pronta'                 => 'Pronta',
-        'aguardando_pagamento'   => 'Aguardando Pagamento',
-        'aguardando_retirada'    => 'Aguardando Retirada',
-        'concluida'              => 'Concluída',
-        'cancelada'              => 'Cancelada',
+        'aberta'                => 'Aberta',
+        'em_andamento'          => 'Em Andamento',
+        'aguardando_aprovacao'  => 'Aguardando Aprovação',
+        'aguardando_peca'       => 'Aguardando Peça',
+        'em_execucao'           => 'Em Execução',
+        'pronta'                => 'Pronta',
+        'aguardando_retirada'   => 'Aguardando Retirada',
+        'concluida'             => 'Concluída',
+        'cancelada'             => 'Cancelada',
     ][$s] ?? $s;
 }
 
 function classeStatusOS($s)
 {
     return [
-        'aberta'                 => 'admin-badge-info',
-        'em_andamento'           => 'admin-badge-alerta',
-        'aguardando_aprovacao'   => 'admin-badge-alerta',
-        'aprovado'               => 'admin-badge-sucesso',
-        'aguardando_peca'        => 'admin-badge-alerta',
-        'em_execucao'            => 'admin-badge-info',
-        'pronta'                 => 'admin-badge-sucesso',
-        'aguardando_pagamento'   => 'admin-badge-erro',
-        'aguardando_retirada'    => 'admin-badge-sucesso',
-        'concluida'              => 'admin-badge-sucesso',
-        'cancelada'              => 'admin-badge-erro',
+        'aberta'                => 'admin-badge-info',
+        'em_andamento'          => 'admin-badge-alerta',
+        'aguardando_aprovacao'  => 'admin-badge-alerta',
+        'aguardando_peca'       => 'admin-badge-erro',
+        'em_execucao'           => 'admin-badge-info',
+        'pronta'                => 'admin-badge-sucesso',
+        'aguardando_retirada'   => 'admin-badge-sucesso',
+        'concluida'             => 'admin-badge-sucesso',
+        'cancelada'             => 'admin-badge-erro',
     ][$s] ?? 'admin-badge-info';
 }
 
 /* =========================================================
-   STATUS DO ORÇAMENTO
+   STATUS DO ORÇAMENTO (7 status)
    ========================================================= */
 function nomeStatusOrc($s)
 {
     return [
-        'rascunho'            => 'Rascunho',
-        'aguardando_revisao'  => 'Aguardando Revisão',
-        'pronto_para_envio'   => 'Pronto pra Enviar',
-        'enviado'             => 'Enviado ao Cliente',
-        'aprovado'            => 'Aprovado',
-        'aprovado_parcial'    => 'Aprovado Parcial',
-        'recusado'            => 'Recusado',
-        'expirado'            => 'Expirado',
-        'adendo_gerado'       => 'Adendo Gerado',
-        'adendo_enviado'      => 'Adendo Enviado',
-        'adendo_aprovado'     => 'Adendo Aprovado',
-        'adendo_reprovado'    => 'Adendo Reprovado',
+        'aguardando_revisao'   => 'Aguardando Revisão',
+        'gerado_enviado'       => 'Gerado/Enviado',
+        'aprovado'             => 'Aprovado',
         'aguardando_pagamento' => 'Aguardando Pagamento',
-        'arquivado'           => 'Arquivado',
+        'pagamento_efetuado'   => 'Pagamento Efetuado',
+        'arquivado'            => 'Arquivado',
+        'cancelado'            => 'Cancelado',
     ][$s] ?? $s;
 }
 
 function classeStatusOrc($s)
 {
     return [
-        'rascunho'            => 'admin-badge-info',
-        'aguardando_revisao'  => 'admin-badge-alerta',
-        'pronto_para_envio'   => 'admin-badge-info',
-        'enviado'             => 'admin-badge-info',
-        'aprovado'            => 'admin-badge-sucesso',
-        'aprovado_parcial'    => 'admin-badge-alerta',
-        'recusado'            => 'admin-badge-erro',
-        'expirado'            => 'admin-badge-erro',
-        'adendo_gerado'       => 'admin-badge-alerta',
-        'adendo_enviado'      => 'admin-badge-info',
-        'adendo_aprovado'     => 'admin-badge-sucesso',
-        'adendo_reprovado'    => 'admin-badge-erro',
+        'aguardando_revisao'   => 'admin-badge-alerta',
+        'gerado_enviado'       => 'admin-badge-info',
+        'aprovado'             => 'admin-badge-sucesso',
         'aguardando_pagamento' => 'admin-badge-erro',
-        'arquivado'           => 'admin-badge-info',
+        'pagamento_efetuado'   => 'admin-badge-sucesso',
+        'arquivado'            => 'admin-badge-info',
+        'cancelado'            => 'admin-badge-erro',
     ][$s] ?? 'admin-badge-info';
 }
 
 /* =========================================================
+   STATUS DO ADENDO (5 status)
+   ========================================================= */
+function nomeStatusAdendo($s)
+{
+    return [
+        'nenhum'    => '—',
+        'enviado'   => 'Adendo Enviado',
+        'aprovado'  => 'Adendo Aprovado',
+        'reprovado' => 'Adendo Reprovado',
+        'arquivado' => 'Adendo Arquivado',
+    ][$s] ?? '—';
+}
+
+function classeStatusAdendo($s)
+{
+    return [
+        'nenhum'    => '',
+        'enviado'   => 'admin-badge-info',
+        'aprovado'  => 'admin-badge-sucesso',
+        'reprovado' => 'admin-badge-erro',
+        'arquivado' => 'admin-badge-info',
+    ][$s] ?? '';
+}
+
+/* =========================================================
    ALIASES DE COMPATIBILIDADE
-   (telas antigas que chamam esses nomes)
    ========================================================= */
 function nomeStatus($s)
 {
@@ -340,6 +303,137 @@ function nomeStatusC($s)
 function classeStatusC($s)
 {
     return classeStatusCompra($s);
+}
+
+/* =========================================================
+   VERIFICAÇÕES DE OS
+   ========================================================= */
+function estaApontadoNaOS($conn, $id_os, $id_usuario)
+{
+    $stmt = $conn->prepare("SELECT id_apontamento FROM os_apontamentos
+                            WHERE id_os = ? AND id_usuario = ? AND data_desapontamento IS NULL
+                            LIMIT 1");
+    $stmt->bind_param('ii', $id_os, $id_usuario);
+    $stmt->execute();
+    $r = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return (bool)$r;
+}
+
+function temSolicitacaoPendente($conn, $id_os)
+{
+    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM os_solicitacoes_peca
+                            WHERE id_os = ? AND status = 'pendente'");
+    $stmt->bind_param('i', $id_os);
+    $stmt->execute();
+    $r = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return ((int)$r['total']) > 0;
+}
+
+/**
+ * Verifica se a OS tem alguma peça entregue (peça chegou fisicamente)
+ */
+function temPecaEntregue($conn, $id_os)
+{
+    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM os_solicitacoes_peca
+                            WHERE id_os = ? AND status = 'entregue'");
+    $stmt->bind_param('i', $id_os);
+    $stmt->execute();
+    $r = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return ((int)$r['total']) > 0;
+}
+
+/**
+ * Verifica se a OS tem alguma solicitação não resolvida
+ * (pendente, aprovada_estoque, aprovada_compra)
+ */
+function temSolicitacaoNaoResolvida($conn, $id_os)
+{
+    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM os_solicitacoes_peca
+                            WHERE id_os = ? AND status IN ('pendente','aprovada_estoque','aprovada_compra')");
+    $stmt->bind_param('i', $id_os);
+    $stmt->execute();
+    $r = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return ((int)$r['total']) > 0;
+}
+
+/* =========================================================
+   OS — GERAR PRÓXIMO NÚMERO
+   ========================================================= */
+function proximoNumeroOS($conn)
+{
+    $ano = date('Y');
+    $stmt = $conn->prepare("SELECT MAX(CAST(SUBSTRING(numero_os, 6) AS UNSIGNED)) AS ultimo
+                            FROM ordens_servico WHERE numero_os LIKE ?");
+    $like = $ano . '-%';
+    $stmt->bind_param('s', $like);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    $proximo = ((int)($row['ultimo'] ?? 0)) + 1;
+    return $ano . '-' . str_pad($proximo, 4, '0', STR_PAD_LEFT);
+}
+
+/* =========================================================
+   OS — STATUS QUE PERMITEM APONTAMENTO
+   ========================================================= */
+function statusPermiteApontamento($status)
+{
+    return in_array($status, ['aberta', 'em_andamento']);
+}
+
+/* =========================================================
+   OS — DECIDIR STATUS APÓS APONTAMENTO
+   Regra: se tem peça entregue → em_execucao, senão → em_andamento
+   ========================================================= */
+function decidirStatusAposApontar($conn, $id_os)
+{
+    if (temPecaEntregue($conn, $id_os)) {
+        return 'em_execucao';
+    }
+    return 'em_andamento';
+}
+
+/* =========================================================
+   OS — DECIDIR STATUS APÓS DESAPONTAMENTO
+   Regra: se tem solicitação não resolvida → aguardando_aprovacao
+          senão → em_andamento
+   ========================================================= */
+function decidirStatusAposDesapontar($conn, $id_os)
+{
+    if (temSolicitacaoNaoResolvida($conn, $id_os)) {
+        return 'aguardando_aprovacao';
+    }
+    return 'em_andamento';
+}
+
+/* =========================================================
+   OS — ATUALIZAR STATUS BASEADO NAS SOLICITAÇÕES
+   ========================================================= */
+function atualizarStatusOSPorSolicitacoes($conn, $id_os)
+{
+    $stmt = $conn->prepare("SELECT status FROM ordens_servico WHERE id_os = ? LIMIT 1");
+    $stmt->bind_param('i', $id_os);
+    $stmt->execute();
+    $os_atual = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$os_atual) return;
+
+    // Status finais não mexem
+    $status_finais = ['concluida', 'cancelada', 'pronta', 'aguardando_retirada'];
+    if (in_array($os_atual['status'], $status_finais)) return;
+
+    $nao_resolvidas = temSolicitacaoNaoResolvida($conn, $id_os);
+
+    if ($nao_resolvidas) {
+        $conn->query("UPDATE ordens_servico SET status = 'aguardando_peca' WHERE id_os = {$id_os}");
+    } else {
+        $conn->query("UPDATE ordens_servico SET status = 'em_andamento' WHERE id_os = {$id_os}");
+    }
 }
 
 /* =========================================================
@@ -425,60 +519,6 @@ function recalcularOrcamento($conn, $id_orcamento)
 }
 
 /* =========================================================
-   OS — ATUALIZAR STATUS BASEADO NAS SOLICITAÇÕES
-   ========================================================= */
-function atualizarStatusOSPorSolicitacoes($conn, $id_os)
-{
-    $stmt = $conn->prepare("
-        SELECT COUNT(*) AS nao_resolvidas
-        FROM os_solicitacoes_peca
-        WHERE id_os = ? AND status IN ('pendente','aprovada_estoque','aprovada_compra')
-    ");
-    $stmt->bind_param('i', $id_os);
-    $stmt->execute();
-    $nao_resolvidas = (int)$stmt->get_result()->fetch_assoc()['nao_resolvidas'];
-    $stmt->close();
-
-    $stmt = $conn->prepare("SELECT status FROM ordens_servico WHERE id_os = ? LIMIT 1");
-    $stmt->bind_param('i', $id_os);
-    $stmt->execute();
-    $os_atual = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-
-    if (!$os_atual) return;
-
-    $status_finais = ['concluida', 'cancelada', 'pronta', 'aguardando_pagamento', 'aguardando_retirada'];
-    if (in_array($os_atual['status'], $status_finais)) return;
-
-    if ($nao_resolvidas > 0) {
-        $conn->query("UPDATE ordens_servico SET status = 'aguardando_peca' WHERE id_os = {$id_os}");
-    } else {
-        $conn->query("UPDATE ordens_servico SET status = 'em_andamento' WHERE id_os = {$id_os}");
-    }
-}
-
-/* =========================================================
-   OS — DEFINIR PRÓXIMO STATUS APÓS APONTAMENTO/DESAPONTAMENTO
-   ========================================================= */
-function decidirStatusAposDesapontar($conn, $id_os)
-{
-    $stmt = $conn->prepare("
-        SELECT COUNT(*) AS nao_resolvidas
-        FROM os_solicitacoes_peca
-        WHERE id_os = ? AND status IN ('pendente','aprovada_estoque','aprovada_compra')
-    ");
-    $stmt->bind_param('i', $id_os);
-    $stmt->execute();
-    $nao_resolvidas = (int)$stmt->get_result()->fetch_assoc()['nao_resolvidas'];
-    $stmt->close();
-
-    if ($nao_resolvidas > 0) {
-        return 'aguardando_aprovacao';
-    }
-    return 'em_andamento';
-}
-
-/* =========================================================
    UNIDADE DE MEDIDA
    ========================================================= */
 function nomeUnidade($u)
@@ -496,15 +536,7 @@ function nomeUnidade($u)
 
 function abreviacaoUnidade($u)
 {
-    return [
-        'un' => 'un',
-        'kg' => 'kg',
-        'g'  => 'g',
-        'L'  => 'L',
-        'mL' => 'mL',
-        'm'  => 'm',
-        'cx' => 'cx',
-    ][$u] ?? 'un';
+    return $u ?: 'un';
 }
 
 function listaUnidades()

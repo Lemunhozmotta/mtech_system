@@ -74,7 +74,7 @@ $stmt->execute();
 $apontamentos = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// ===== SOLICITAÇÕES DE PEÇA =====
+// ===== SOLICITAÇÕES =====
 $stmt = $conn->prepare("
     SELECT sp.*,
            us.nome AS solicitou_nome,
@@ -94,7 +94,6 @@ $stmt->execute();
 $solicitacoes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// ===== SEPARA SOLICITAÇÕES =====
 $solic_pendentes = [];
 $solic_aprovadas = [];
 $solic_historico = [];
@@ -109,14 +108,13 @@ foreach ($solicitacoes as $sp) {
     }
 }
 
-// ===== ORÇAMENTO PRINCIPAL DA OS =====
+// ===== ORÇAMENTO =====
 $stmt = $conn->prepare("
     SELECT o.*,
            (SELECT COALESCE(SUM(valor), 0) FROM os_orcamento_pagamentos
             WHERE id_orcamento = o.id_orcamento AND status = 'confirmado') AS total_pago
     FROM os_orcamentos o
-    WHERE o.id_os = ? AND o.id_orcamento_pai IS NULL
-      AND o.status NOT IN ('arquivado')
+    WHERE o.id_os = ?
     ORDER BY o.id_orcamento DESC LIMIT 1
 ");
 $stmt->bind_param('i', $id_os);
@@ -124,8 +122,9 @@ $stmt->execute();
 $orcamento = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-// Calcula saldo
 $saldo_orc = null;
+$tem_adendo = false;
+
 if ($orcamento) {
     $total = (float)$orcamento['valor_total'];
     $pago = (float)$orcamento['total_pago'];
@@ -137,9 +136,13 @@ if ($orcamento) {
         'saldo' => $saldo,
         'quitado' => ($saldo <= 0.009)
     ];
+
+    if (!empty($orcamento['adendo_status']) && $orcamento['adendo_status'] !== 'nenhum') {
+        $tem_adendo = true;
+    }
 }
 
-// ===== CARRINHO DO ESTOQUE (sessão) =====
+// ===== CARRINHO =====
 if (!isset($_SESSION['estoque_carrinho'])) {
     $_SESSION['estoque_carrinho'] = [];
 }
@@ -157,7 +160,7 @@ if (!empty($carrinho_ids)) {
     $carrinho_itens = $res_carrinho->fetch_all(MYSQLI_ASSOC);
 }
 
-// ===== LISTA DE MECÂNICOS =====
+// ===== MECÂNICOS =====
 $podeApontarOutro = in_array($usuarioLogado['nivel'], [1, 2]);
 $mecanicos = [];
 if ($podeApontarOutro) {
@@ -179,12 +182,9 @@ $estouApontado = $apontamento_atual && ((int)$apontamento_atual['id_usuario'] ==
 $podeEditar = $souAdmin || $abriuOS || ($souMecanico && $estouApontado);
 $podeCancelar = in_array($nivel, [1, 2]);
 $podeAprovar = in_array($nivel, [1, 2]);
-$podeApontarSiMesmo = $souMecanico;
+$podeVerValores = in_array($nivel, [1, 2]);
 
 $statusFinal = in_array($os['status'], ['concluida', 'cancelada']);
-
-// Status onde não pode apontar ninguém
-$statusNaoApontavel = ['pronta', 'aguardando_pagamento', 'aguardando_retirada'];
 
 $conn->close();
 ?>
@@ -200,33 +200,31 @@ $conn->close();
 $msg = $_GET['msg'] ?? '';
 $mensagens = [
     'cadastrada'          => ['texto' => 'OS aberta com sucesso!', 'tipo' => 'sucesso'],
-    'apontado'            => ['texto' => 'Mecânico apontado com sucesso!', 'tipo' => 'sucesso'],
+    'apontado'            => ['texto' => 'Mecânico apontado!', 'tipo' => 'sucesso'],
     'desapontado'         => ['texto' => 'Apontamento encerrado.', 'tipo' => 'alerta'],
     'peca_solicitada'     => ['texto' => 'Peça(s) solicitada(s)!', 'tipo' => 'sucesso'],
-    'adendo_gerado'       => ['texto' => 'Adendo gerado! Aguardando revisão.', 'tipo' => 'sucesso'],
-    'carrinho_add'        => ['texto' => 'Peça(s) do estoque pré-selecionada(s).', 'tipo' => 'sucesso'],
+    'adendo_gerado'       => ['texto' => 'Adendo gerado!', 'tipo' => 'sucesso'],
+    'carrinho_add'        => ['texto' => 'Peça(s) pré-selecionada(s).', 'tipo' => 'sucesso'],
     'aprovadas'           => ['texto' => 'Peça(s) aprovada(s)!', 'tipo' => 'sucesso'],
     'negadas'             => ['texto' => 'Peça(s) negada(s).', 'tipo' => 'alerta'],
     'negada'              => ['texto' => 'Peça negada.', 'tipo' => 'alerta'],
     'requisitada'         => ['texto' => 'Peça requisitada do estoque!', 'tipo' => 'sucesso'],
     'compra_aprovada'     => ['texto' => 'Peça enviada para compra!', 'tipo' => 'sucesso'],
     'solicitacao_fechada' => ['texto' => 'Solicitação fechada.', 'tipo' => 'sucesso'],
-    'separacao_iniciada'  => ['texto' => 'Separação de peças iniciada.', 'tipo' => 'sucesso'],
-    'pecas_chegaram'      => ['texto' => 'Peças chegaram! OS em execução.', 'tipo' => 'sucesso'],
+    'pecas_chegaram'      => ['texto' => 'Peças chegaram!', 'tipo' => 'sucesso'],
     'pronta'              => ['texto' => 'OS marcada como pronta!', 'tipo' => 'sucesso'],
-    'pronta_pagamento'    => ['texto' => 'OS pronta! Aguardando pagamento.', 'tipo' => 'sucesso'],
-    'pronta_retirada'     => ['texto' => 'OS pronta e paga! Aguardando retirada.', 'tipo' => 'sucesso'],
-    'aguardando_retirada' => ['texto' => 'OS aguardando retirada.', 'tipo' => 'sucesso'],
-    'concluida'           => ['texto' => 'OS concluída com sucesso!', 'tipo' => 'sucesso'],
+    'pronta_retirada'     => ['texto' => 'OS pronta e paga!', 'tipo' => 'sucesso'],
+    'concluida'           => ['texto' => 'OS concluída!', 'tipo' => 'sucesso'],
     'cancelada'           => ['texto' => 'OS cancelada.', 'tipo' => 'alerta'],
     'erro'                => ['texto' => 'Ocorreu um erro.', 'tipo' => 'erro'],
-    'sem_permissao'       => ['texto' => 'Você não tem permissão para essa ação.', 'tipo' => 'erro'],
-    'ja_apontado_outra'   => ['texto' => 'Este mecânico já está apontado em outra OS.', 'tipo' => 'erro'],
-    'ja_apontado_nesta'   => ['texto' => 'Este mecânico já está apontado nesta OS.', 'tipo' => 'erro'],
+    'sem_permissao'       => ['texto' => 'Você não tem permissão.', 'tipo' => 'erro'],
+    'ja_apontado_outra'   => ['texto' => 'Este mecânico já está em outra OS.', 'tipo' => 'erro'],
+    'ja_apontado_nesta'   => ['texto' => 'Este mecânico já está nesta OS.', 'tipo' => 'erro'],
     'nao_apontado'        => ['texto' => 'Você não está apontado nesta OS.', 'tipo' => 'erro'],
-    'editada'             => ['texto' => 'OS atualizada com sucesso!', 'tipo' => 'sucesso'],
-    'erro_obrig'          => ['texto' => 'Preencha todos os campos obrigatórios.', 'tipo' => 'erro'],
-    'estoque_insuficiente' => ['texto' => 'Estoque insuficiente para requisitar esta peça.', 'tipo' => 'erro'],
+    'nao_pode_apontar'    => ['texto' => 'Esta OS não permite apontamento agora.', 'tipo' => 'erro'],
+    'editada'             => ['texto' => 'OS atualizada!', 'tipo' => 'sucesso'],
+    'erro_obrig'          => ['texto' => 'Preencha os campos obrigatórios.', 'tipo' => 'erro'],
+    'estoque_insuficiente' => ['texto' => 'Estoque insuficiente.', 'tipo' => 'erro'],
 ];
 if (!empty($msg) && isset($mensagens[$msg])):
     $m = $mensagens[$msg];
@@ -238,10 +236,10 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </div>
 <?php endif; ?>
 
-<!-- ===== STATUS + AÇÕES CONTEXTUAIS ===== -->
+<!-- ===== STATUS + AÇÕES ===== -->
 <div class="admin-bloco">
     <div class="admin-bloco-titulo">
-        <span><i class="fas fa-info-circle"></i> Status</span>
+        <span><i class="fas fa-info-circle"></i> Status da OS</span>
         <span class="admin-badge <?php echo classeStatusOS($os['status']); ?>"
             style="font-size: 13px; padding: 6px 14px;">
             <?php echo nomeStatusOS($os['status']); ?>
@@ -250,10 +248,10 @@ if (!empty($msg) && isset($mensagens[$msg])):
 
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
 
-        <?php // ====== STATUS: ABERTA ====== 
+        <?php // ===== ABERTA ===== 
         ?>
         <?php if ($os['status'] === 'aberta'): ?>
-            <?php if ($podeApontarSiMesmo && !$apontamento_atual): ?>
+            <?php if ($souMecanico && !$apontamento_atual): ?>
                 <form action="ordens_apontar_acao.php" method="POST" style="display:inline;">
                     <input type="hidden" name="acao" value="apontar">
                     <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
@@ -272,16 +270,15 @@ if (!empty($msg) && isset($mensagens[$msg])):
             <?php endif; ?>
         <?php endif; ?>
 
-        <?php // ====== STATUS: EM ANDAMENTO ====== 
+        <?php // ===== EM ANDAMENTO ===== 
         ?>
         <?php if ($os['status'] === 'em_andamento'): ?>
             <?php if ($estouApontado): ?>
                 <span class="admin-badge admin-badge-alerta" style="font-size:13px; padding:8px 16px;">
-                    <i class="fas fa-user-check"></i>&nbsp; Você está trabalhando desde
-                    <?php echo date('H:i', strtotime($apontamento_atual['data_apontamento'])); ?>
+                    <i class="fas fa-user-check"></i>&nbsp; Você está apontado
                 </span>
                 <a href="ordens_editar.php?id=<?php echo $id_os; ?>" class="admin-btn">
-                    <i class="fas fa-edit"></i> Editar OS / Diagnóstico
+                    <i class="fas fa-edit"></i> Editar / Diagnóstico
                 </a>
                 <button type="button" class="admin-btn admin-btn-secundario" onclick="abrirModalSolicitarPeca()">
                     <i class="fas fa-box-open"></i> Solicitar Peças
@@ -294,113 +291,8 @@ if (!empty($msg) && isset($mensagens[$msg])):
                 <form action="ordens_apontar_acao.php" method="POST" style="display:inline;">
                     <input type="hidden" name="acao" value="desapontar">
                     <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
-                    <button type="submit" class="admin-btn admin-btn-secundario"><i class="fas fa-stop"></i> Desapontar</button>
-                </form>
-            <?php elseif ($apontamento_atual): ?>
-                <span class="admin-badge admin-badge-alerta" style="font-size:13px; padding:8px 16px;">
-                    <i class="fas fa-user-check"></i>&nbsp; <?php echo limpar($apontamento_atual['mecanico_nome']); ?> está
-                    trabalhando
-                </span>
-                <?php if ($podeApontarOutro): ?>
-                    <form action="ordens_apontar_acao.php" method="POST" style="display:inline;">
-                        <input type="hidden" name="acao" value="desapontar">
-                        <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
-                        <button type="submit" class="admin-btn admin-btn-secundario"
-                            onclick="return confirm('Desapontar <?php echo limpar($apontamento_atual['mecanico_nome']); ?>?');">
-                            <i class="fas fa-user-slash"></i> Desapontar
-                        </button>
-                    </form>
-                <?php endif; ?>
-                <?php if ($podeEditar): ?>
-                    <a href="ordens_editar.php?id=<?php echo $id_os; ?>" class="admin-btn admin-btn-secundario">
-                        <i class="fas fa-edit"></i> Editar OS
-                    </a>
-                <?php endif; ?>
-            <?php else: ?>
-                <?php if ($podeApontarOutro): ?>
-                    <button type="button" class="admin-btn" onclick="abrirModalApontar()">
-                        <i class="fas fa-user-plus"></i> Apontar mecânico
-                    </button>
-                <?php endif; ?>
-                <?php if ($podeEditar): ?>
-                    <a href="ordens_editar.php?id=<?php echo $id_os; ?>" class="admin-btn admin-btn-secundario">
-                        <i class="fas fa-edit"></i> Editar OS
-                    </a>
-                <?php endif; ?>
-            <?php endif; ?>
-        <?php endif; ?>
-
-        <?php // ====== STATUS: AGUARDANDO APROVAÇÃO ====== 
-        ?>
-        <?php if ($os['status'] === 'aguardando_aprovacao'): ?>
-            <span class="admin-badge admin-badge-info" style="font-size:13px; padding:8px 16px;">
-                <i class="fas fa-clock"></i>&nbsp; Aguardando revisão do orçamento
-            </span>
-            <?php if ($podeAprovar): ?>
-                <a href="orcamentos.php?filtro=aguardando_revisao" class="admin-btn">
-                    <i class="fas fa-file-invoice-dollar"></i> Ir pra Orçamentos
-                </a>
-            <?php endif; ?>
-            <?php if ($podeApontarOutro && !$apontamento_atual): ?>
-                <button type="button" class="admin-btn admin-btn-secundario" onclick="abrirModalApontar()">
-                    <i class="fas fa-user-plus"></i> Apontar mecânico
-                </button>
-            <?php endif; ?>
-        <?php endif; ?>
-
-        <?php // ====== STATUS: APROVADO ====== 
-        ?>
-        <?php if ($os['status'] === 'aprovado'): ?>
-            <span class="admin-badge admin-badge-sucesso" style="font-size:13px; padding:8px 16px;">
-                <i class="fas fa-check"></i>&nbsp; Aprovada pelo cliente
-            </span>
-            <?php if ($podeAprovar): ?>
-                <form action="ordens_status_acao.php" method="POST" style="display:inline;">
-                    <input type="hidden" name="acao" value="iniciar_separacao">
-                    <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
-                    <button type="submit" class="admin-btn">
-                        <i class="fas fa-boxes"></i> Iniciar Separação de Peças
-                    </button>
-                </form>
-            <?php endif; ?>
-        <?php endif; ?>
-
-        <?php // ====== STATUS: AGUARDANDO PEÇA ====== 
-        ?>
-        <?php if ($os['status'] === 'aguardando_peca'): ?>
-            <span class="admin-badge admin-badge-alerta" style="font-size:13px; padding:8px 16px;">
-                <i class="fas fa-hourglass-half"></i>&nbsp; Aguardando chegada de peças
-            </span>
-            <?php if ($podeAprovar): ?>
-                <form action="ordens_status_acao.php" method="POST" style="display:inline;">
-                    <input type="hidden" name="acao" value="pecas_chegaram">
-                    <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
-                    <button type="submit" class="admin-btn" onclick="return confirm('Confirmar que as peças chegaram?');">
-                        <i class="fas fa-check"></i> Peças Chegaram
-                    </button>
-                </form>
-            <?php endif; ?>
-        <?php endif; ?>
-
-        <?php // ====== STATUS: EM EXECUÇÃO ====== 
-        ?>
-        <?php if ($os['status'] === 'em_execucao'): ?>
-            <?php if ($estouApontado): ?>
-                <span class="admin-badge admin-badge-alerta" style="font-size:13px; padding:8px 16px;">
-                    <i class="fas fa-user-check"></i>&nbsp; Trabalhando desde
-                    <?php echo date('H:i', strtotime($apontamento_atual['data_apontamento'])); ?>
-                </span>
-                <a href="ordens_editar.php?id=<?php echo $id_os; ?>" class="admin-btn">
-                    <i class="fas fa-edit"></i> Editar OS / Solução
-                </a>
-                <button type="button" class="admin-btn admin-btn-secundario" onclick="abrirModalSolicitarPeca()">
-                    <i class="fas fa-box-open"></i> Solicitar mais peças (adendo)
-                </button>
-                <form action="ordens_status_acao.php" method="POST" style="display:inline;">
-                    <input type="hidden" name="acao" value="marcar_pronta">
-                    <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
-                    <button type="submit" class="admin-btn" onclick="return confirm('Marcar esta OS como pronta?');">
-                        <i class="fas fa-flag-checkered"></i> Marcar como Pronta
+                    <button type="submit" class="admin-btn admin-btn-secundario">
+                        <i class="fas fa-stop"></i> Desapontar
                     </button>
                 </form>
             <?php elseif ($apontamento_atual): ?>
@@ -418,6 +310,112 @@ if (!empty($msg) && isset($mensagens[$msg])):
                         </button>
                     </form>
                 <?php endif; ?>
+                <?php if ($podeEditar): ?>
+                    <a href="ordens_editar.php?id=<?php echo $id_os; ?>" class="admin-btn admin-btn-secundario">
+                        <i class="fas fa-edit"></i> Editar OS
+                    </a>
+                <?php endif; ?>
+            <?php else: ?>
+                <?php if ($podeApontarOutro): ?>
+                    <button type="button" class="admin-btn" onclick="abrirModalApontar()">
+                        <i class="fas fa-user-plus"></i> Apontar mecânico
+                    </button>
+                <?php endif; ?>
+                <?php if ($podeEditar): ?>
+                    <a href="ordens_editar.php?id=<?php echo $id_os; ?>" class="admin-btn admin-btn-secundario">
+                        <i class="fas fa-edit"></i> Editar OS
+                    </a>
+                <?php endif; ?>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <?php // ===== AGUARDANDO APROVAÇÃO ===== 
+        ?>
+        <?php if ($os['status'] === 'aguardando_aprovacao'): ?>
+            <span class="admin-badge admin-badge-info" style="font-size:13px; padding:8px 16px;">
+                <i class="fas fa-clock"></i>&nbsp; Aguardando revisão do orçamento
+            </span>
+
+            <?php if ($podeAprovar): ?>
+                <a href="orcamentos.php?filtro=aguardando_revisao" class="admin-btn">
+                    <i class="fas fa-file-invoice-dollar"></i> Ir pra Orçamentos
+                </a>
+            <?php endif; ?>
+
+            <?php // Mecânico apontado ainda pode desapontar 
+            ?>
+            <?php if ($estouApontado): ?>
+                <span class="admin-badge admin-badge-alerta" style="font-size:13px; padding:8px 16px;">
+                    <i class="fas fa-user-check"></i>&nbsp; Você está apontado — desaponte pra liberar
+                </span>
+                <a href="ordens_editar.php?id=<?php echo $id_os; ?>" class="admin-btn admin-btn-secundario">
+                    <i class="fas fa-edit"></i> Editar OS
+                </a>
+                <form action="ordens_apontar_acao.php" method="POST" style="display:inline;">
+                    <input type="hidden" name="acao" value="desapontar">
+                    <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
+                    <button type="submit" class="admin-btn admin-btn-secundario">
+                        <i class="fas fa-stop"></i> Desapontar
+                    </button>
+                </form>
+            <?php endif; ?>
+
+            <?php // Admin pode desapontar 
+            ?>
+            <?php if ($podeApontarOutro && $apontamento_atual && !$estouApontado): ?>
+                <form action="ordens_apontar_acao.php" method="POST" style="display:inline;">
+                    <input type="hidden" name="acao" value="desapontar">
+                    <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
+                    <button type="submit" class="admin-btn admin-btn-secundario"
+                        onclick="return confirm('Desapontar <?php echo limpar($apontamento_atual['mecanico_nome']); ?>?');">
+                        <i class="fas fa-user-slash"></i> Desapontar <?php echo limpar($apontamento_atual['mecanico_nome']); ?>
+                    </button>
+                </form>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <?php // ===== AGUARDANDO PEÇA ===== 
+        ?>
+        <?php if ($os['status'] === 'aguardando_peca'): ?>
+            <span class="admin-badge admin-badge-erro" style="font-size:13px; padding:8px 16px;">
+                <i class="fas fa-hourglass-half"></i>&nbsp; Aguardando chegada de peças
+            </span>
+            <?php if ($podeAprovar): ?>
+                <form action="ordens_status_acao.php" method="POST" style="display:inline;">
+                    <input type="hidden" name="acao" value="pecas_chegaram">
+                    <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
+                    <button type="submit" class="admin-btn" onclick="return confirm('Confirmar que as peças chegaram?');">
+                        <i class="fas fa-check"></i> Peças Chegaram
+                    </button>
+                </form>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <?php // ===== EM EXECUÇÃO ===== 
+        ?>
+        <?php if ($os['status'] === 'em_execucao'): ?>
+            <?php if ($estouApontado): ?>
+                <span class="admin-badge admin-badge-alerta" style="font-size:13px; padding:8px 16px;">
+                    <i class="fas fa-user-check"></i>&nbsp; Executando
+                </span>
+                <a href="ordens_editar.php?id=<?php echo $id_os; ?>" class="admin-btn">
+                    <i class="fas fa-edit"></i> Editar / Solução
+                </a>
+                <button type="button" class="admin-btn admin-btn-secundario" onclick="abrirModalSolicitarPeca()">
+                    <i class="fas fa-box-open"></i> Solicitar mais peças
+                </button>
+                <form action="ordens_status_acao.php" method="POST" style="display:inline;">
+                    <input type="hidden" name="acao" value="marcar_pronta">
+                    <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
+                    <button type="submit" class="admin-btn" onclick="return confirm('Marcar esta OS como pronta?');">
+                        <i class="fas fa-flag-checkered"></i> Marcar como Pronta
+                    </button>
+                </form>
+            <?php elseif ($apontamento_atual): ?>
+                <span class="admin-badge admin-badge-alerta" style="font-size:13px; padding:8px 16px;">
+                    <i class="fas fa-user-check"></i>&nbsp; <?php echo limpar($apontamento_atual['mecanico_nome']); ?>
+                    executando
+                </span>
                 <?php if ($podeAprovar): ?>
                     <form action="ordens_status_acao.php" method="POST" style="display:inline;">
                         <input type="hidden" name="acao" value="marcar_pronta">
@@ -427,28 +425,14 @@ if (!empty($msg) && isset($mensagens[$msg])):
                         </button>
                     </form>
                 <?php endif; ?>
-            <?php else: ?>
-                <?php if ($podeApontarOutro): ?>
-                    <button type="button" class="admin-btn" onclick="abrirModalApontar()">
-                        <i class="fas fa-user-plus"></i> Apontar mecânico
-                    </button>
-                    <form action="ordens_status_acao.php" method="POST" style="display:inline;">
-                        <input type="hidden" name="acao" value="marcar_pronta">
-                        <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
-                        <button type="submit" class="admin-btn admin-btn-secundario"
-                            onclick="return confirm('Marcar esta OS como pronta?');">
-                            <i class="fas fa-flag-checkered"></i> Marcar como Pronta
-                        </button>
-                    </form>
-                <?php endif; ?>
             <?php endif; ?>
         <?php endif; ?>
 
-        <?php // ====== STATUS: PRONTA ====== 
+        <?php // ===== PRONTA ===== 
         ?>
         <?php if ($os['status'] === 'pronta'): ?>
             <span class="admin-badge admin-badge-sucesso" style="font-size:13px; padding:8px 16px;">
-                <i class="fas fa-flag-checkered"></i>&nbsp; OS pronta — aguardando retirada
+                <i class="fas fa-flag-checkered"></i>&nbsp; Serviço pronto
             </span>
             <?php if ($podeAprovar): ?>
                 <a href="pagamentos.php" class="admin-btn">
@@ -458,27 +442,14 @@ if (!empty($msg) && isset($mensagens[$msg])):
                     <input type="hidden" name="acao" value="cliente_retirou">
                     <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
                     <button type="submit" class="admin-btn admin-btn-secundario"
-                        onclick="return confirm('Confirmar que o cliente retirou o carro?');">
+                        onclick="return confirm('Confirmar que o cliente retirou?');">
                         <i class="fas fa-check"></i> Cliente Retirou
                     </button>
                 </form>
             <?php endif; ?>
         <?php endif; ?>
 
-        <?php // ====== STATUS: AGUARDANDO PAGAMENTO ====== 
-        ?>
-        <?php if ($os['status'] === 'aguardando_pagamento'): ?>
-            <span class="admin-badge admin-badge-erro" style="font-size:13px; padding:8px 16px;">
-                <i class="fas fa-money-bill-wave"></i>&nbsp; Aguardando pagamento
-            </span>
-            <?php if ($podeAprovar): ?>
-                <a href="pagamentos.php" class="admin-btn">
-                    <i class="fas fa-dollar-sign"></i> Ir pra Pagamentos
-                </a>
-            <?php endif; ?>
-        <?php endif; ?>
-
-        <?php // ====== STATUS: AGUARDANDO RETIRADA ====== 
+        <?php // ===== AGUARDANDO RETIRADA ===== 
         ?>
         <?php if ($os['status'] === 'aguardando_retirada'): ?>
             <span class="admin-badge admin-badge-sucesso" style="font-size:13px; padding:8px 16px;">
@@ -488,15 +459,14 @@ if (!empty($msg) && isset($mensagens[$msg])):
                 <form action="ordens_status_acao.php" method="POST" style="display:inline;">
                     <input type="hidden" name="acao" value="cliente_retirou">
                     <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
-                    <button type="submit" class="admin-btn"
-                        onclick="return confirm('Confirmar que o cliente retirou o carro?');">
+                    <button type="submit" class="admin-btn" onclick="return confirm('Confirmar que o cliente retirou?');">
                         <i class="fas fa-check"></i> Cliente Retirou
                     </button>
                 </form>
             <?php endif; ?>
         <?php endif; ?>
 
-        <?php // ====== STATUS FINAIS ====== 
+        <?php // ===== FINAIS ===== 
         ?>
         <?php if ($os['status'] === 'concluida'): ?>
             <span class="admin-badge admin-badge-sucesso" style="font-size:13px; padding:8px 16px;">
@@ -515,9 +485,9 @@ if (!empty($msg) && isset($mensagens[$msg])):
             <?php endif; ?>
         <?php endif; ?>
 
-        <?php // ====== BOTÃO CANCELAR (comum) ====== 
+        <?php // ===== CANCELAR ===== 
         ?>
-        <?php if ($podeCancelar && !$statusFinal && !in_array($os['status'], ['pronta', 'aguardando_pagamento', 'aguardando_retirada'])): ?>
+        <?php if ($podeCancelar && !$statusFinal && !in_array($os['status'], ['pronta', 'aguardando_retirada'])): ?>
             <button type="button" class="admin-btn admin-btn-secundario"
                 style="margin-left:auto; border-color: var(--mtech-red); color: var(--mtech-red);"
                 onclick="abrirModalCancelar()">
@@ -527,16 +497,28 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </div>
 </div>
 
-<!-- ===== ORÇAMENTO (SALDO) ===== -->
-<?php if ($saldo_orc): ?>
+<!-- ===== ORÇAMENTO (SALDO) — SÓ NÍVEIS 1 E 2 ===== -->
+<?php if ($saldo_orc && $podeVerValores): ?>
     <div class="admin-bloco">
         <div class="admin-bloco-titulo">
-            <span><i class="fas fa-file-invoice-dollar"></i> Orçamento</span>
+            <span><i class="fas fa-file-invoice-dollar"></i> Orçamento
+                <span class="admin-badge <?php echo classeStatusOrc($orcamento['status']); ?>"
+                    style="margin-left:8px; font-size:10px;">
+                    <?php echo nomeStatusOrc($orcamento['status']); ?>
+                </span>
+                <?php if ($tem_adendo): ?>
+                    <span class="admin-badge <?php echo classeStatusAdendo($orcamento['adendo_status']); ?>"
+                        style="margin-left:4px; font-size:10px;">
+                        <?php echo nomeStatusAdendo($orcamento['adendo_status']); ?>
+                    </span>
+                <?php endif; ?>
+            </span>
             <a href="orcamentos_ver.php?id=<?php echo (int)$orcamento['id_orcamento']; ?>"
                 style="font-size:13px; color: var(--mtech-yellow);">
-                Ver orçamento completo <i class="fas fa-arrow-right"></i>
+                Ver orçamento <i class="fas fa-arrow-right"></i>
             </a>
         </div>
+
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
             <div class="admin-card-resumo azul" style="padding:15px;">
                 <div class="admin-card-resumo-titulo" style="font-size:11px;">Total</div>
@@ -562,19 +544,18 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </div>
 <?php endif; ?>
 
-<!-- ===== AVISO DO CARRINHO DO ESTOQUE ===== -->
+<!-- ===== CARRINHO DO ESTOQUE ===== -->
 <?php if (!empty($carrinho_itens) && $estouApontado): ?>
     <div class="admin-bloco" style="border-left: 4px solid #25d366;">
         <div class="admin-bloco-titulo">
-            <span><i class="fas fa-shopping-basket"></i> Peças pré-selecionadas do estoque</span>
+            <span><i class="fas fa-shopping-basket"></i> Peças pré-selecionadas</span>
             <span><?php echo count($carrinho_itens); ?> item(ns)</span>
         </div>
         <ul style="list-style:none; display:grid; gap:6px;">
             <?php foreach ($carrinho_itens as $ci): ?>
                 <li
                     style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(37,211,102,0.05); border-radius:6px; font-size:13px;">
-                    <span><strong><?php echo limpar($ci['nome']); ?></strong>
-                        <?php echo $ci['marca'] ? '— ' . limpar($ci['marca']) : ''; ?></span>
+                    <span><strong><?php echo limpar($ci['nome']); ?></strong></span>
                     <span style="color:#25d366;">Tem <?php echo (int)$ci['quantidade']; ?></span>
                 </li>
             <?php endforeach; ?>
@@ -585,7 +566,7 @@ if (!empty($msg) && isset($mensagens[$msg])):
             </button>
             <a href="estoque_limpar_carrinho_acao.php" class="admin-btn admin-btn-secundario"
                 style="font-size:12px; padding:6px 12px;">
-                <i class="fas fa-times"></i> Limpar seleção
+                <i class="fas fa-times"></i> Limpar
             </a>
         </div>
     </div>
@@ -615,12 +596,12 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </div>
     <div class="admin-form-campo">
         <label>Diagnóstico</label>
-        <textarea disabled rows="4" placeholder="O mecânico ainda não preencheu o diagnóstico."
+        <textarea disabled rows="4" placeholder="Ainda não preenchido."
             style="font-family: 'Poppins', sans-serif; resize: none;"><?php echo limpar($os['diagnostico'] ?? ''); ?></textarea>
     </div>
     <div class="admin-form-campo" style="margin-top: 15px;">
         <label>Solução aplicada</label>
-        <textarea disabled rows="4" placeholder="O mecânico ainda não preencheu a solução."
+        <textarea disabled rows="4" placeholder="Ainda não preenchido."
             style="font-family: 'Poppins', sans-serif; resize: none;"><?php echo limpar($os['solucao'] ?? ''); ?></textarea>
     </div>
 </div>
@@ -680,7 +661,7 @@ if (!empty($msg) && isset($mensagens[$msg])):
                 disabled>
         </div>
         <?php if (!empty($os['carro_obs'])): ?>
-            <div class="admin-form-campo admin-form-campo-full"><label>Avarias / Observações do veículo</label>
+            <div class="admin-form-campo admin-form-campo-full"><label>Avarias / Observações</label>
                 <textarea disabled rows="3"><?php echo limpar($os['carro_obs']); ?></textarea>
             </div>
         <?php endif; ?>
@@ -695,10 +676,10 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </div>
 </div>
 
-<!-- ===== SOLICITAÇÕES PENDENTES (com origem) ===== -->
+<!-- ===== SOLICITAÇÕES PENDENTES ===== -->
 <div class="admin-bloco">
     <div class="admin-bloco-titulo">
-        <span><i class="fas fa-hourglass-half"></i> Solicitações Pendentes de Aprovação</span>
+        <span><i class="fas fa-hourglass-half"></i> Solicitações Pendentes</span>
         <span><?php echo count($solic_pendentes); ?> pendente(s)</span>
     </div>
 
@@ -709,7 +690,7 @@ if (!empty($msg) && isset($mensagens[$msg])):
         </div>
     <?php else: ?>
         <?php if ($podeAprovar): ?>
-            <form action="ordens_aprovar_pecas_acao.php" method="POST" id="formAprovarPecas">
+            <form action="ordens_aprovar_pecas_acao.php" method="POST">
                 <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
 
                 <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
@@ -717,11 +698,11 @@ if (!empty($msg) && isset($mensagens[$msg])):
                         <input type="checkbox" id="selecionarTodas" onchange="toggleTodas(this)"> Selecionar todas
                     </label>
                     <button type="submit" class="admin-btn" style="margin-left: auto;">
-                        <i class="fas fa-check-double"></i> Aprovar selecionadas
+                        <i class="fas fa-check-double"></i> Aprovar
                     </button>
                     <button type="button" class="admin-btn admin-btn-secundario"
                         style="border-color: var(--mtech-red); color: var(--mtech-red);" onclick="abrirModalNegarPecas()">
-                        <i class="fas fa-times"></i> Negar selecionadas
+                        <i class="fas fa-times"></i> Negar
                     </button>
                 </div>
 
@@ -740,10 +721,8 @@ if (!empty($msg) && isset($mensagens[$msg])):
                         <tbody>
                             <?php foreach ($solic_pendentes as $sp): ?>
                                 <tr>
-                                    <td>
-                                        <input type="checkbox" name="ids[]" value="<?php echo (int)$sp['id_solicitacao']; ?>"
-                                            class="check-peca">
-                                    </td>
+                                    <td><input type="checkbox" name="ids[]" value="<?php echo (int)$sp['id_solicitacao']; ?>"
+                                            class="check-peca"></td>
                                     <td>
                                         <strong><?php echo limpar($sp['nome_peca']); ?></strong>
                                         <?php if (!empty($sp['observacoes'])): ?>
@@ -752,22 +731,16 @@ if (!empty($msg) && isset($mensagens[$msg])):
                                         <?php endif; ?>
                                     </td>
                                     <td style="text-align:center;">
-                                        <?php echo number_format((float)$sp['quantidade'], 0, ',', '.'); ?>
-                                    </td>
+                                        <?php echo number_format((float)$sp['quantidade'], 0, ',', '.'); ?></td>
                                     <td><?php echo limpar($sp['solicitou_nome']); ?></td>
                                     <td>
                                         <?php if ($sp['id_estoque']): ?>
-                                            <span class="admin-badge admin-badge-sucesso"><i class="fas fa-boxes"></i> Estoque</span>
+                                            <span class="admin-badge admin-badge-sucesso">Estoque</span>
                                         <?php else: ?>
-                                            <span class="admin-badge admin-badge-alerta"><i class="fas fa-shopping-cart"></i>
-                                                Compra</span>
+                                            <span class="admin-badge admin-badge-alerta">Compra</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
-                                        <?php echo date('d/m/Y', strtotime($sp['data_solicitacao'])); ?>
-                                        <br><small
-                                            style="color:var(--mtech-text-muted);"><?php echo date('H:i', strtotime($sp['data_solicitacao'])); ?></small>
-                                    </td>
+                                    <td><?php echo date('d/m/Y H:i', strtotime($sp['data_solicitacao'])); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -836,11 +809,9 @@ if (!empty($msg) && isset($mensagens[$msg])):
                             </td>
                             <td>
                                 <?php if ($sp['origem'] === 'estoque'): ?>
-                                    <span class="admin-badge admin-badge-sucesso"><i class="fas fa-boxes"></i> Estoque</span>
+                                    <span class="admin-badge admin-badge-sucesso">Estoque</span>
                                 <?php elseif ($sp['origem'] === 'compra'): ?>
-                                    <span class="admin-badge admin-badge-alerta"><i class="fas fa-shopping-cart"></i> Compra</span>
-                                <?php else: ?>
-                                    <span style="color:var(--mtech-text-muted);">—</span>
+                                    <span class="admin-badge admin-badge-alerta">Compra</span>
                                 <?php endif; ?>
                             </td>
                             <td><?php echo limpar($sp['aprovou_nome'] ?? '—'); ?></td>
@@ -848,7 +819,7 @@ if (!empty($msg) && isset($mensagens[$msg])):
                                 <?php if ($sp['status'] === 'aprovada_estoque'): ?>
                                     <span class="admin-badge admin-badge-info">Aguardando retirada</span>
                                 <?php elseif ($sp['status'] === 'aprovada_compra'): ?>
-                                    <span class="admin-badge admin-badge-alerta">Aguardando compra/chegada</span>
+                                    <span class="admin-badge admin-badge-alerta">Aguardando compra</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -863,7 +834,7 @@ if (!empty($msg) && isset($mensagens[$msg])):
 <?php if (!empty($solic_historico)): ?>
     <div class="admin-bloco">
         <div class="admin-bloco-titulo">
-            <span><i class="fas fa-history"></i> Histórico de Solicitações</span>
+            <span><i class="fas fa-history"></i> Histórico</span>
             <span><?php echo count($solic_historico); ?> item(ns)</span>
         </div>
         <div style="overflow-x:auto;">
@@ -885,16 +856,12 @@ if (!empty($msg) && isset($mensagens[$msg])):
                             </td>
                             <td>
                                 <?php if ($sp['status'] === 'entregue'): ?>
-                                    <span class="admin-badge admin-badge-sucesso"><i class="fas fa-check"></i> Entregue</span>
+                                    <span class="admin-badge admin-badge-sucesso">Entregue</span>
                                 <?php elseif ($sp['status'] === 'negada'): ?>
-                                    <span class="admin-badge admin-badge-erro"><i class="fas fa-times"></i> Negada</span>
+                                    <span class="admin-badge admin-badge-erro">Negada</span>
                                 <?php endif; ?>
                             </td>
-                            <td>
-                                <?php echo date('d/m/Y', strtotime($sp['data_solicitacao'])); ?>
-                                <br><small
-                                    style="color:var(--mtech-text-muted);"><?php echo date('H:i', strtotime($sp['data_solicitacao'])); ?></small>
-                            </td>
+                            <td><?php echo date('d/m/Y H:i', strtotime($sp['data_solicitacao'])); ?></td>
                             <td>
                                 <?php if ($sp['status'] === 'negada' && !empty($sp['motivo_recusa'])): ?>
                                     <small
@@ -902,8 +869,6 @@ if (!empty($msg) && isset($mensagens[$msg])):
                                 <?php elseif ($sp['status'] === 'entregue' && $sp['data_entrega']): ?>
                                     <small style="color:var(--mtech-text-muted);">Entregue em
                                         <?php echo date('d/m/Y H:i', strtotime($sp['data_entrega'])); ?></small>
-                                <?php else: ?>
-                                    <span style="color:var(--mtech-text-muted);">—</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -929,8 +894,6 @@ if (!empty($msg) && isset($mensagens[$msg])):
                         <th>Entrou</th>
                         <th>Saiu</th>
                         <th>Tempo</th>
-                        <th>Apontado por</th>
-                        <th>Desapontado por</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -941,8 +904,6 @@ if (!empty($msg) && isset($mensagens[$msg])):
                             <td><?php echo $ap['data_desapontamento'] ? date('d/m/Y H:i', strtotime($ap['data_desapontamento'])) : '<span class="admin-badge admin-badge-alerta">Em andamento</span>'; ?>
                             </td>
                             <td><?php echo formatarMinutos((int)$ap['minutos']); ?></td>
-                            <td><?php echo $ap['apontou_nome'] ? limpar($ap['apontou_nome']) : '—'; ?></td>
-                            <td><?php echo $ap['desapontou_nome'] ? limpar($ap['desapontou_nome']) : '—'; ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -955,7 +916,7 @@ if (!empty($msg) && isset($mensagens[$msg])):
 <div class="admin-modal-fundo" id="modalSolicitarPecaFundo"></div>
 <div class="admin-modal" id="modalSolicitarPeca" style="max-width: 750px;">
     <div class="admin-modal-titulo"><i class="fas fa-box-open"></i> Solicitar Peças</div>
-    <form action="ordens_solicitar_peca_acao.php" method="POST" class="admin-modal-form" id="formSolicitarPeca">
+    <form action="ordens_solicitar_peca_acao.php" method="POST" class="admin-modal-form">
         <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
 
         <?php if (!empty($carrinho_itens)): ?>
@@ -963,13 +924,11 @@ if (!empty($msg) && isset($mensagens[$msg])):
                 style="padding: 12px; background: rgba(37, 211, 102, 0.08); border-left: 3px solid #25d366; border-radius: 6px;">
                 <p style="font-size: 13px; margin-bottom: 8px;">
                     <i class="fas fa-check-circle" style="color: #25d366;"></i>
-                    <strong><?php echo count($carrinho_itens); ?></strong> peça(s) pré-selecionada(s) do estoque:
+                    <strong><?php echo count($carrinho_itens); ?></strong> peça(s) pré-selecionada(s)
                 </p>
                 <?php foreach ($carrinho_itens as $ci): ?>
                     <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:13px;">
                         <span><?php echo limpar($ci['nome']); ?></span>
-                        <span style="color:var(--mtech-text-muted);">R$
-                            <?php echo number_format((float)$ci['valor_venda'], 2, ',', '.'); ?></span>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -985,23 +944,22 @@ if (!empty($msg) && isset($mensagens[$msg])):
         <div class="admin-modal-acoes">
             <button type="button" class="admin-btn admin-btn-secundario"
                 onclick="fecharModalSolicitarPeca()">Cancelar</button>
-            <button type="submit" class="admin-btn"><i class="fas fa-paper-plane"></i> Enviar Solicitação</button>
+            <button type="submit" class="admin-btn"><i class="fas fa-paper-plane"></i> Enviar</button>
         </div>
     </form>
 </div>
 
-<!-- ===== MODAL: NEGAR PEÇAS EM LOTE ===== -->
+<!-- ===== MODAL: NEGAR PEÇAS ===== -->
 <div class="admin-modal-fundo" id="modalNegarPecasFundo"></div>
 <div class="admin-modal" id="modalNegarPecas">
-    <div class="admin-modal-titulo"><i class="fas fa-times-circle"></i> Negar Peças Selecionadas</div>
-    <form action="ordens_negar_pecas_acao.php" method="POST" class="admin-modal-form" id="formNegarPecas">
+    <div class="admin-modal-titulo"><i class="fas fa-times-circle"></i> Negar Peças</div>
+    <form action="ordens_negar_pecas_acao.php" method="POST" class="admin-modal-form">
         <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
         <div id="idsNegarContainer"></div>
 
         <div class="admin-form-campo">
-            <label for="motivo_negacao_lote">Motivo da negação *</label>
-            <textarea id="motivo_negacao_lote" name="motivo" rows="4" required
-                placeholder="Ex: Peça não disponível no fornecedor, cliente não autorizou, valor muito alto..."></textarea>
+            <label for="motivo_negacao_lote">Motivo *</label>
+            <textarea id="motivo_negacao_lote" name="motivo" rows="4" required></textarea>
         </div>
 
         <p style="font-size:13px; color:var(--mtech-text-muted);" id="resumoNegar"></p>
@@ -1010,13 +968,13 @@ if (!empty($msg) && isset($mensagens[$msg])):
             <button type="button" class="admin-btn admin-btn-secundario"
                 onclick="fecharModalNegarPecas()">Cancelar</button>
             <button type="submit" class="admin-btn" style="background: var(--mtech-red);">
-                <i class="fas fa-times"></i> Confirmar Negação
+                <i class="fas fa-times"></i> Confirmar
             </button>
         </div>
     </form>
 </div>
 
-<!-- ===== MODAL: APONTAR MECÂNICO ===== -->
+<!-- ===== MODAL: APONTAR ===== -->
 <div class="admin-modal-fundo" id="modalApontarFundo"></div>
 <div class="admin-modal" id="modalApontar">
     <div class="admin-modal-titulo"><i class="fas fa-user-plus"></i> Apontar Mecânico</div>
@@ -1040,7 +998,7 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </form>
 </div>
 
-<!-- ===== MODAL: CANCELAR OS ===== -->
+<!-- ===== MODAL: CANCELAR ===== -->
 <div class="admin-modal-fundo" id="modalCancelarFundo"></div>
 <div class="admin-modal" id="modalCancelar">
     <div class="admin-modal-titulo"><i class="fas fa-ban"></i> Cancelar OS</div>
@@ -1049,19 +1007,18 @@ if (!empty($msg) && isset($mensagens[$msg])):
         <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
 
         <p style="font-size:14px; color: var(--mtech-text-muted);">
-            A OS não será apagada — só ficará com status <strong>Cancelada</strong>.
+            A OS não será apagada — só ficará <strong>Cancelada</strong>.
         </p>
 
         <div class="admin-form-campo">
             <label for="motivo_cancelamento">Motivo (opcional)</label>
-            <textarea id="motivo_cancelamento" name="motivo_cancelamento" rows="3"
-                placeholder="Ex: Cliente desistiu, carro vendido, peça não disponível..."></textarea>
+            <textarea id="motivo_cancelamento" name="motivo_cancelamento" rows="3"></textarea>
         </div>
 
         <div class="admin-modal-acoes">
             <button type="button" class="admin-btn admin-btn-secundario" onclick="fecharModalCancelar()">Voltar</button>
             <button type="submit" class="admin-btn" style="background: var(--mtech-red);">
-                <i class="fas fa-ban"></i> Confirmar Cancelamento
+                <i class="fas fa-ban"></i> Confirmar
             </button>
         </div>
     </form>
@@ -1104,7 +1061,6 @@ if (!empty($msg) && isset($mensagens[$msg])):
         border: 1px solid var(--mtech-border);
         border-radius: 8px;
         cursor: pointer;
-        font-size: 14px;
     }
 
     .linha-peca .btn-remover-linha:hover {
@@ -1121,7 +1077,6 @@ if (!empty($msg) && isset($mensagens[$msg])):
 
 <script>
     let contadorLinhas = 0;
-
     const carrinhoItens =
         <?php echo json_encode($carrinho_itens, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
@@ -1129,27 +1084,25 @@ if (!empty($msg) && isset($mensagens[$msg])):
         const wrapper = document.createElement('div');
         wrapper.className = 'linha-peca';
         const nome = dados ? dados.nome : '';
-        const qtd = dados ? 1 : 1;
         const idEstoque = dados ? dados.id_estoque : '';
-        const badge = dados ?
-            '<span class="admin-badge admin-badge-sucesso" style="font-size:10px; margin-left:6px;">🟢 do estoque</span>' :
+        const badge = dados ? '<span class="admin-badge admin-badge-sucesso" style="font-size:10px;">🟢 estoque</span>' :
             '';
 
         wrapper.innerHTML = `
             <div class="admin-form-campo">
-                <label>Nome da peça * ${badge}</label>
-                <input type="text" name="pecas[${indice}][nome]" required placeholder="Ex: Pastilha de freio" value="${String(nome).replace(/"/g, '&quot;')}">
+                <label>Peça * ${badge}</label>
+                <input type="text" name="pecas[${indice}][nome]" required value="${String(nome).replace(/"/g, '&quot;')}">
                 <input type="hidden" name="pecas[${indice}][id_estoque]" value="${idEstoque}">
             </div>
             <div class="admin-form-campo">
                 <label>Qtd *</label>
-                <input type="number" name="pecas[${indice}][qtd]" value="${qtd}" min="1" step="1" required>
+                <input type="number" name="pecas[${indice}][qtd]" value="1" min="1" step="1" required>
             </div>
             <div class="admin-form-campo">
                 <label>Observações</label>
-                <input type="text" name="pecas[${indice}][obs]" placeholder="Marca, código, urgência...">
+                <input type="text" name="pecas[${indice}][obs]">
             </div>
-            <button type="button" class="btn-remover-linha" title="Remover" onclick="this.parentElement.remove()">
+            <button type="button" class="btn-remover-linha" onclick="this.parentElement.remove()">
                 <i class="fas fa-trash"></i>
             </button>
         `;
@@ -1161,23 +1114,16 @@ if (!empty($msg) && isset($mensagens[$msg])):
         const linha = criarLinhaPeca(contadorLinhas, dados || null);
         container.appendChild(linha);
         contadorLinhas++;
-        if (!dados) {
-            const primeiroInput = linha.querySelector('input[type="text"]');
-            if (primeiroInput) primeiroInput.focus();
-        }
     }
 
     function abrirModalSolicitarPeca() {
-        const container = document.getElementById('linhasPecas');
-        container.innerHTML = '';
+        document.getElementById('linhasPecas').innerHTML = '';
         contadorLinhas = 0;
-
         if (carrinhoItens.length > 0) {
             carrinhoItens.forEach(item => adicionarLinhaPeca(item));
         } else {
             adicionarLinhaPeca();
         }
-
         document.getElementById('modalSolicitarPeca').classList.add('ativo');
         document.getElementById('modalSolicitarPecaFundo').classList.add('ativo');
     }
@@ -1207,7 +1153,7 @@ if (!empty($msg) && isset($mensagens[$msg])):
             input.value = c.value;
             container.appendChild(input);
         });
-        document.getElementById('resumoNegar').textContent = marcados.length + ' peça(s) serão negadas.';
+        document.getElementById('resumoNegar').textContent = marcados.length + ' peça(s)';
         document.getElementById('modalNegarPecas').classList.add('ativo');
         document.getElementById('modalNegarPecasFundo').classList.add('ativo');
     }

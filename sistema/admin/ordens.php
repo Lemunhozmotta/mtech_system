@@ -1,7 +1,7 @@
 <?php
 /* =========================================================
    M-TECH SYSTEM — ORDENS DE SERVIÇO (lista)
-   Filtros + contadores do fluxo novo
+   9 status, 9 balões (3×3), filtros do fluxo novo
    ========================================================= */
 
 $titulo_pagina = 'Ordens de Serviço';
@@ -39,28 +39,19 @@ $tipos = '';
 
 // ===== FILTROS =====
 if ($filtro === 'ativas') {
-    $sql .= " AND os.status IN ('aberta', 'em_andamento', 'aguardando_aprovacao', 'orcamento_enviado', 'aprovado', 'aguardando_pagamento', 'aguardando_peca', 'em_execucao')";
+    $sql .= " AND os.status IN ('aberta', 'em_andamento', 'aguardando_aprovacao', 'aguardando_peca', 'em_execucao')";
 } elseif ($filtro === 'aberta') {
     $sql .= " AND os.status = 'aberta'";
 } elseif ($filtro === 'em_andamento') {
     $sql .= " AND os.status = 'em_andamento'";
 } elseif ($filtro === 'aguardando_aprovacao') {
     $sql .= " AND os.status = 'aguardando_aprovacao'";
-    } elseif ($filtro === 'orcamento_enviado') {
-        $sql .= " AND os.status = 'orcamento_enviado'";
-    } elseif ($filtro === 'aprovado') {
-        $sql .= " AND os.status = 'aprovado'";
-    } elseif ($filtro === 'aguardando_pagamento') {
-        $sql .= " AND os.status = 'aguardando_pagamento'";
-    }
 } elseif ($filtro === 'aguardando_peca') {
     $sql .= " AND os.status = 'aguardando_peca'";
 } elseif ($filtro === 'em_execucao') {
     $sql .= " AND os.status = 'em_execucao'";
 } elseif ($filtro === 'pronta') {
     $sql .= " AND os.status = 'pronta'";
-} elseif ($filtro === 'aguardando_pagamento') {
-    $sql .= " AND os.status = 'aguardando_pagamento'";
 } elseif ($filtro === 'aguardando_retirada') {
     $sql .= " AND os.status = 'aguardando_retirada'";
 } elseif ($filtro === 'concluida') {
@@ -87,20 +78,19 @@ $stmt->execute();
 $ordens = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
+// ===== CONTADORES =====
 $contadores = [
-    'aberta'                => 0,
-    'em_andamento'          => 0,
-    'aguardando_aprovacao'  => 0,
-    'orcamento_enviado'     => 0,
-    'aprovado'              => 0,
-    'aguardando_pagamento'  => 0,
-    'aguardando_peca'       => 0,
-    'em_execucao'           => 0,
-    'pronta'                => 0,
-    'aguardando_retirada'   => 0,
-    'concluida'             => 0,
-    'cancelada'             => 0
+    'aberta'               => 0,
+    'em_andamento'         => 0,
+    'aguardando_aprovacao' => 0,
+    'aguardando_peca'      => 0,
+    'em_execucao'          => 0,
+    'pronta'               => 0,
+    'aguardando_retirada'  => 0,
+    'concluida'            => 0,
+    'cancelada'            => 0
 ];
+
 $res = $conn->query("SELECT status, COUNT(*) AS total FROM ordens_servico GROUP BY status");
 while ($row = $res->fetch_assoc()) {
     $contadores[$row['status']] = (int)$row['total'];
@@ -117,92 +107,81 @@ $mostraApontado = in_array($nivel, [1, 2]);
 <?php
 $msg = $_GET['msg'] ?? '';
 $mensagens = [
-    'cadastrada' => ['texto' => 'OS aberta com sucesso!', 'tipo' => 'sucesso'],
-    'editada' => ['texto' => 'OS atualizada com sucesso!', 'tipo' => 'sucesso'],
-    'status' => ['texto' => 'Status atualizado com sucesso!', 'tipo' => 'sucesso'],
-    'cancelada' => ['texto' => 'OS cancelada. Ela continua no histórico.', 'tipo' => 'alerta'],
-    'erro' => ['texto' => 'Ocorreu um erro. Tente novamente.', 'tipo' => 'erro'],
-    'erro_obrig' => ['texto' => 'Preencha todos os campos obrigatórios.', 'tipo' => 'erro'],
-    'sem_permissao' => ['texto' => 'Você não tem permissão para essa ação.', 'tipo' => 'erro'],
+    'cadastrada'    => ['texto' => 'OS aberta com sucesso!', 'tipo' => 'sucesso'],
+    'editada'       => ['texto' => 'OS atualizada com sucesso!', 'tipo' => 'sucesso'],
+    'status'        => ['texto' => 'Status atualizado com sucesso!', 'tipo' => 'sucesso'],
+    'cancelada'     => ['texto' => 'OS cancelada.', 'tipo' => 'alerta'],
+    'erro'          => ['texto' => 'Ocorreu um erro.', 'tipo' => 'erro'],
+    'erro_obrig'    => ['texto' => 'Preencha todos os campos obrigatórios.', 'tipo' => 'erro'],
+    'sem_permissao' => ['texto' => 'Você não tem permissão.', 'tipo' => 'erro'],
 ];
 if (!empty($msg) && isset($mensagens[$msg])):
     $m = $mensagens[$msg];
     $icone = $m['tipo'] === 'sucesso' ? 'check-circle' : ($m['tipo'] === 'alerta' ? 'exclamation-circle' : 'times-circle');
 ?>
-<div class="admin-alerta admin-alerta-<?php echo $m['tipo']; ?>">
-    <i class="fas fa-<?php echo $icone; ?>"></i>
-    <?php echo $m['texto']; ?>
-</div>
+    <div class="admin-alerta admin-alerta-<?php echo $m['tipo']; ?>">
+        <i class="fas fa-<?php echo $icone; ?>"></i>
+        <?php echo $m['texto']; ?>
+    </div>
 <?php endif; ?>
 
-<!-- ===== CONTADORES ===== -->
-<div class="admin-cards-resumo" style="grid-template-columns: repeat(4, 1fr);">
+<!-- ===== CONTADORES (9 balões em 3×3) ===== -->
+<div class="admin-cards-resumo" style="grid-template-columns: repeat(3, 1fr);">
+
     <div class="admin-card-resumo azul">
         <div class="admin-card-resumo-icone"><i class="fas fa-folder-open"></i></div>
         <div class="admin-card-resumo-valor"><?php echo $contadores['aberta']; ?></div>
         <div class="admin-card-resumo-titulo">Aberta</div>
     </div>
+
     <div class="admin-card-resumo amarelo">
         <div class="admin-card-resumo-icone"><i class="fas fa-wrench"></i></div>
         <div class="admin-card-resumo-valor"><?php echo $contadores['em_andamento']; ?></div>
         <div class="admin-card-resumo-titulo">Em Andamento</div>
     </div>
+
     <div class="admin-card-resumo" style="border-left-color: #EBAF00;">
         <div class="admin-card-resumo-icone"><i class="fas fa-clock"></i></div>
         <div class="admin-card-resumo-valor"><?php echo $contadores['aguardando_aprovacao']; ?></div>
         <div class="admin-card-resumo-titulo">Aguardando Aprovação</div>
     </div>
-    <div class="admin-card-resumo" style="border-left-color: #4A90E2;">
-        <div class="admin-card-resumo-icone"><i class="fas fa-file-invoice-dollar"></i></div>
-        <div class="admin-card-resumo-valor"><?php echo $contadores['orcamento_enviado']; ?></div>
-        <div class="admin-card-resumo-titulo">Orçamento Enviado</div>
-    </div>
-    <div class="admin-card-resumo verde">
-        <div class="admin-card-resumo-icone"><i class="fas fa-check"></i></div>
-        <div class="admin-card-resumo-valor"><?php echo $contadores['aprovado']; ?></div>
-        <div class="admin-card-resumo-titulo">Aprovado</div>
-    </div>
-    <div class="admin-card-resumo" style="border-left-color: #EBAF00;">
-        <div class="admin-card-resumo-icone"><i class="fas fa-money-bill-wave"></i></div>
-        <div class="admin-card-resumo-valor"><?php echo $contadores['aguardando_pagamento']; ?></div>
-        <div class="admin-card-resumo-titulo">Aguardando Pagamento</div>
-    </div>
-    </div>
+
     <div class="admin-card-resumo" style="border-left-color: #D62D2D;">
         <div class="admin-card-resumo-icone"><i class="fas fa-hourglass-half"></i></div>
         <div class="admin-card-resumo-valor"><?php echo $contadores['aguardando_peca']; ?></div>
         <div class="admin-card-resumo-titulo">Aguardando Peça</div>
     </div>
+
     <div class="admin-card-resumo" style="border-left-color: #4A90E2;">
         <div class="admin-card-resumo-icone"><i class="fas fa-tools"></i></div>
         <div class="admin-card-resumo-valor"><?php echo $contadores['em_execucao']; ?></div>
         <div class="admin-card-resumo-titulo">Em Execução</div>
     </div>
+
     <div class="admin-card-resumo" style="border-left-color: #25d366;">
         <div class="admin-card-resumo-icone"><i class="fas fa-flag-checkered"></i></div>
         <div class="admin-card-resumo-valor"><?php echo $contadores['pronta']; ?></div>
         <div class="admin-card-resumo-titulo">Pronta</div>
     </div>
-    <div class="admin-card-resumo" style="border-left-color: #D62D2D;">
-        <div class="admin-card-resumo-icone"><i class="fas fa-money-bill-wave"></i></div>
-        <div class="admin-card-resumo-valor"><?php echo $contadores['aguardando_pagamento']; ?></div>
-        <div class="admin-card-resumo-titulo">Aguardando Pagamento</div>
-    </div>
+
     <div class="admin-card-resumo" style="border-left-color: #25d366;">
         <div class="admin-card-resumo-icone"><i class="fas fa-hand-holding-usd"></i></div>
         <div class="admin-card-resumo-valor"><?php echo $contadores['aguardando_retirada']; ?></div>
         <div class="admin-card-resumo-titulo">Aguardando Retirada</div>
     </div>
+
     <div class="admin-card-resumo verde">
         <div class="admin-card-resumo-icone"><i class="fas fa-check-circle"></i></div>
         <div class="admin-card-resumo-valor"><?php echo $contadores['concluida']; ?></div>
         <div class="admin-card-resumo-titulo">Concluída</div>
     </div>
+
     <div class="admin-card-resumo" style="border-left-color: #666;">
         <div class="admin-card-resumo-icone"><i class="fas fa-ban"></i></div>
         <div class="admin-card-resumo-valor"><?php echo $contadores['cancelada']; ?></div>
         <div class="admin-card-resumo-titulo">Cancelada</div>
     </div>
+
 </div>
 
 <!-- ===== BARRA DE BUSCA + FILTROS ===== -->
@@ -220,17 +199,10 @@ if (!empty($msg) && isset($mensagens[$msg])):
             </option>
             <option value="aguardando_aprovacao" <?php echo $filtro === 'aguardando_aprovacao' ? 'selected' : ''; ?>>
                 Aguardando Aprovação</option>
-            <option value="orcamento_enviado" <?php echo $filtro === 'orcamento_enviado' ? 'selected' : ''; ?>>Orçamento
-                Enviado</option>
-            <option value="aprovado" <?php echo $filtro === 'aprovado' ? 'selected' : ''; ?>>Aprovado</option>
-            <option value="aguardando_pagamento" <?php echo $filtro === 'aguardando_pagamento' ? 'selected' : ''; ?>>
-                Aguardando Pagamento</option>
             <option value="aguardando_peca" <?php echo $filtro === 'aguardando_peca' ? 'selected' : ''; ?>>Aguardando
                 Peça</option>
             <option value="em_execucao" <?php echo $filtro === 'em_execucao' ? 'selected' : ''; ?>>Em Execução</option>
             <option value="pronta" <?php echo $filtro === 'pronta' ? 'selected' : ''; ?>>Pronta</option>
-            <option value="aguardando_pagamento" <?php echo $filtro === 'aguardando_pagamento' ? 'selected' : ''; ?>>
-                Aguardando Pagamento</option>
             <option value="aguardando_retirada" <?php echo $filtro === 'aguardando_retirada' ? 'selected' : ''; ?>>
                 Aguardando Retirada</option>
             <option value="concluida" <?php echo $filtro === 'concluida' ? 'selected' : ''; ?>>Concluída</option>
@@ -250,17 +222,17 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </div>
 
     <?php if (empty($ordens)): ?>
-    <div class="admin-vazio">
-        <i class="fas fa-clipboard-list"></i>
-        <p>Nenhuma OS encontrada.</p>
-        <small>
-            <?php if (!empty($busca)): ?>
-            Tente outra busca ou <a href="ordens.php">limpe os filtros</a>.
-            <?php else: ?>
-            Clique em <strong>"Nova OS"</strong> pra começar.
-            <?php endif; ?>
-        </small>
-    </div>
+        <div class="admin-vazio">
+            <i class="fas fa-clipboard-list"></i>
+            <p>Nenhuma OS encontrada.</p>
+            <small>
+                <?php if (!empty($busca)): ?>
+                    Tente outra busca ou <a href="ordens.php">limpe os filtros</a>.
+                <?php else: ?>
+                    Clique em <strong>"Nova OS"</strong> pra começar.
+                <?php endif; ?>
+            </small>
+        </div>
     <?php else: ?>
         <div style="overflow-x:auto;">
             <table class="admin-tabela">
@@ -279,21 +251,26 @@ if (!empty($msg) && isset($mensagens[$msg])):
                 <tbody>
                     <?php foreach ($ordens as $os): ?>
                         <tr>
-                            <td><strong
-                                    style="font-family: monospace; letter-spacing: 1px;"><?php echo limpar($os['numero_os']); ?></strong>
+                            <td>
+                                <strong style="font-family: monospace; letter-spacing: 1px;">
+                                    <?php echo limpar($os['numero_os']); ?>
+                                </strong>
                             </td>
                             <td><?php echo limpar($os['cliente_nome']); ?></td>
                             <td>
                                 <strong><?php echo limpar($os['marca']); ?></strong> <?php echo limpar($os['modelo']); ?>
-                                <br><small
-                                    style="color: var(--mtech-text-muted); font-family: monospace;"><?php echo strtoupper(limpar($os['placa'])); ?></small>
+                                <br><small style="color: var(--mtech-text-muted); font-family: monospace;">
+                                    <?php echo strtoupper(limpar($os['placa'])); ?>
+                                </small>
                             </td>
                             <td>
                                 <?php echo date('d/m/Y', strtotime($os['data_abertura'])); ?>
-                                <br><small
-                                    style="color: var(--mtech-text-muted);"><?php echo date('H:i', strtotime($os['data_abertura'])); ?></small>
+                                <br><small style="color: var(--mtech-text-muted);">
+                                    <?php echo date('H:i', strtotime($os['data_abertura'])); ?>
+                                </small>
                             </td>
-                            <td><?php echo $os['mecanico_nome'] ? limpar($os['mecanico_nome']) : '<span style="color: var(--mtech-text-muted);">—</span>'; ?>
+                            <td>
+                                <?php echo $os['mecanico_nome'] ? limpar($os['mecanico_nome']) : '<span style="color: var(--mtech-text-muted);">—</span>'; ?>
                             </td>
                             <?php if ($mostraApontado): ?>
                                 <td>
@@ -308,14 +285,18 @@ if (!empty($msg) && isset($mensagens[$msg])):
                                 </td>
                             <?php endif; ?>
                             <td>
-                                <span
-                                    class="admin-badge <?php echo classeStatusOS($os['status']); ?>"><?php echo nomeStatusOS($os['status']); ?></span>
+                                <span class="admin-badge <?php echo classeStatusOS($os['status']); ?>">
+                                    <?php echo nomeStatusOS($os['status']); ?>
+                                </span>
                             </td>
                             <td style="text-align: right; white-space: nowrap;">
-                                <a href="ordens_ver.php?id=<?php echo (int)$os['id_os']; ?>" class="admin-btn-acao"
-                                    title="Ver"><i class="fas fa-eye"></i></a>
+                                <a href="ordens_ver.php?id=<?php echo (int)$os['id_os']; ?>" class="admin-btn-acao" title="Ver">
+                                    <i class="fas fa-eye"></i>
+                                </a>
                                 <a href="ordens_editar.php?id=<?php echo (int)$os['id_os']; ?>" class="admin-btn-acao"
-                                    title="Editar"><i class="fas fa-edit"></i></a>
+                                    title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -326,13 +307,13 @@ if (!empty($msg) && isset($mensagens[$msg])):
 </div>
 
 <script>
-(function() {
-    const filtro = document.getElementById('filtroOS');
-    const form = document.getElementById('formBuscaOS');
-    if (filtro && form) {
-        filtro.addEventListener('change', () => form.submit());
-    }
-})();
+    (function() {
+        const filtro = document.getElementById('filtroOS');
+        const form = document.getElementById('formBuscaOS');
+        if (filtro && form) {
+            filtro.addEventListener('change', () => form.submit());
+        }
+    })();
 </script>
 
 <?php require_once '_footer.php'; ?>

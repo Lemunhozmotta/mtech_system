@@ -1,24 +1,24 @@
-atusCompra<?php
-            /* =========================================================
+<?php
+/* =========================================================
    M-TECH SYSTEM — COMPRAS (ver detalhes + ações)
    ========================================================= */
 
-            $titulo_pagina = 'Detalhes da Compra';
-            require_once '_header.php';
+$titulo_pagina = 'Detalhes da Compra';
+require_once '_header.php';
 
-            $usuarioLogado = usuarioLogado();
-            $conn = conectar();
+$usuarioLogado = usuarioLogado();
+$conn = conectar();
 
-            $podeGerenciar = in_array($usuarioLogado['nivel'], [1, 2]);
-            $podeVerValores = in_array($usuarioLogado['nivel'], [1, 2]);
+$podeGerenciar = in_array($usuarioLogado['nivel'], [1, 2]);
+$podeVerValores = in_array($usuarioLogado['nivel'], [1, 2]);
 
-            $id = (int)($_GET['id'] ?? 0);
-            if ($id <= 0) {
-                $conn->close();
-                redirecionar('compras.php');
-            }
+$id = (int)($_GET['id'] ?? 0);
+if ($id <= 0) {
+    $conn->close();
+    redirecionar('compras.php');
+}
 
-            $stmt = $conn->prepare("
+$stmt = $conn->prepare("
     SELECT c.*,
            os.numero_os, os.status AS os_status,
            sp.nome_peca AS solicitacao_nome,
@@ -35,43 +35,20 @@ atusCompra<?php
     LEFT JOIN usuarios u_rec ON u_rec.id_usuario = c.id_usuario_recebeu
     WHERE c.id_compra = ? LIMIT 1
 ");
-            $stmt->bind_param('i', $id);
-            $stmt->execute();
-            $compra = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
+$stmt->bind_param('i', $id);
+$stmt->execute();
+$compra = $stmt->get_result()->fetch_assoc();
+$stmt->close();
 
-            if (!$compra) {
-                $conn->close();
-                redirecionar('compras.php');
-            }
+if (!$compra) {
+    $conn->close();
+    redirecionar('compras.php');
+}
 
-            $conn->close();
+$conn->close();
 
-            function nomeStatusC($s)
-            {
-                return [
-                    'aguardando_aprovacao' => 'Aguardando Aprovação',
-                    'aprovada'             => 'Aprovada',
-                    'comprada'             => 'Comprada',
-                    'recebida'             => 'Recebida',
-                    'negada'               => 'Negada',
-                    'cancelada'            => 'Cancelada',
-                ][$s] ?? $s;
-            }
-            function classeStatusC($s)
-            {
-                return [
-                    'aguardando_aprovacao' => 'admin-badge-info',
-                    'aprovada'             => 'admin-badge-alerta',
-                    'comprada'             => 'admin-badge-info',
-                    'recebida'             => 'admin-badge-sucesso',
-                    'negada'               => 'admin-badge-erro',
-                    'cancelada'            => 'admin-badge-erro',
-                ][$s] ?? 'admin-badge-info';
-            }
-
-            $statusFinal = in_array($compra['status'], ['recebida', 'negada', 'cancelada']);
-            ?>
+$statusFinal = in_array($compra['status'], ['recebida', 'negada', 'cancelada']);
+?>
 
 <div class="admin-topo-pagina">
     <h1 class="admin-titulo-pagina">

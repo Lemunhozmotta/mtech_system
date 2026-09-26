@@ -1,11 +1,15 @@
 <?php
 /* =========================================================
-   M-TECH SYSTEM — ORÇAMENTOS (ver / revisar)
-   Só níveis 1 e 2
+   M-TECH SYSTEM — ORÇAMENTOS (ver / revisar / criar)
+   Aceita:
+   - ?id_os=X        → cria novo orçamento (a partir das solicitações)
+   - ?id_orcamento=X → edita orçamento existente
    ========================================================= */
 
 $titulo_pagina = 'Revisar Orçamento';
-require_once '_header.php';
+
+require_once '../conexao.php';
+verificarLogin();
 
 $usuarioLogado = usuarioLogado();
 if (!in_array($usuarioLogado['nivel'], [1, 2])) {
@@ -13,68 +17,188 @@ if (!in_array($usuarioLogado['nivel'], [1, 2])) {
 }
 
 $conn = conectar();
-$id_orcamento = (int)($_GET['id'] ?? 0);
+$id_orcamento = (int)($_GET['id_orcamento'] ?? 0);
+$id_os_param  = (int)($_GET['id_os'] ?? 0);
 $idUsuario = (int)$usuarioLogado['id_usuario'];
 
-if ($id_orcamento <= 0) {
+// =========================================================
+// MODO 1 — EDIÇÃO
+// =========================================================
+$orcamento = null;
+$id_os = 0;
+
+if ($id_orcamento > 0) {
+    $stmt = $conn->prepare("
+        SELECT o.*,
+               os.id_os, os.numero_os, os.status AS os_status, os.descricao_problema, os.diagnostico,
+               cl.nome AS cliente_nome, cl.telefone AS cliente_telefone, cl.whatsapp AS cliente_whatsapp, cl.email AS cliente_email,
+               cr.marca, cr.modelo, cr.placa, cr.ano, cr.cor, cr.km_atual
+        FROM os_orcamentos o
+        INNER JOIN ordens_servico os ON os.id_os = o.id_os
+        INNER JOIN clientes cl ON cl.id_cliente = os.id_cliente
+        INNER JOIN carros cr ON cr.id_carro = os.id_carro
+        WHERE o.id_orcamento = ? LIMIT 1
+    ");
+    $stmt->bind_param('i', $id_orcamento);
+    $stmt->execute();
+    $orcamento = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$orcamento) {
+        $conn->close();
+        redirecionar('orcamentos.php?msg=erro');
+    }
+
+    $id_os = (int)$orcamento['id_os'];
+
+    // =========================================================
+    // MODO 2 — CRIAÇÃO
+    // =========================================================
+} elseif ($id_os_param > 0) {
+    $stmt = $conn->prepare("
+        SELECT os.*,
+               cl.nome AS cliente_nome, cl.telefone AS cliente_telefone, cl.whatsapp AS cliente_whatsapp, cl.email AS cliente_email,
+               cr.marca, cr.modelo, cr.placa, cr.ano, cr.cor, cr.km_atual
+        FROM ordens_servico os
+        INNER JOIN clientes cl ON cl.id_cliente = os.id_cliente
+        INNER JOIN carros cr ON cr.id_carro = os.id_carro
+        WHERE os.id_os = ? LIMIT 1
+    ");
+    $stmt->bind_param('i', $id_os_param);
+    $stmt->execute();
+    $os_info = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$os_info) {
+        $conn->close();
+        redirecionar('orcamentos.php?msg=erro');
+    }
+
+    // Verifica se já existe orçamento
+    $stmt = $conn->prepare("
+        SELECT * FROM os_orcamentos
+        WHERE id_os = ? AND status NOT IN ('arquivado', 'cancelado')
+        ORDER BY id_orcamento DESC LIMIT 1
+    ");
+    $stmt->bind_param('i', $id_os_param);
+    $stmt->execute();
+    $orc_existente = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if ($orc_existente) {
+        $conn->close();
+        redirecionar('orcamentos_ver.php?id_orcamento=' . (int)$orc_existente['id_orcamento']);
+    }
+
+    // Orçamento fake pra reusar layout
+    $orcamento = [
+        'id_orcamento'   => 0,
+        'id_os'          => (int)$os_info['id_os'],
+        'numero_orcamento' => $os_info['numero_os'],
+        'versao'         => 1,
+        'status'         => 'novo',
+        'adendo_status'  => 'nenhum',
+        'valor_pecas'    => 0,
+        'valor_mao_obra' => 0,
+        'valor_desconto' => 0,
+        'valor_total'    => 0,
+        'validade_dias'  => 7,
+        'observacoes'    => null,
+        'token_publico'  => null,
+        'os_status'      => $os_info['status'],
+        'numero_os'      => $os_info['numero_os'],
+        'descricao_problema' => $os_info['descricao_problema'],
+        'diagnostico'    => $os_info['diagnostico'],
+        'cliente_nome'   => $os_info['cliente_nome'],
+        'cliente_telefone' => $os_info['cliente_telefone'],
+        'cliente_whatsapp' => $os_info['cliente_whatsapp'],
+        'cliente_email'  => $os_info['cliente_email'],
+        'marca'          => $os_info['marca'],
+        'modelo'         => $os_info['modelo'],
+        'placa'          => $os_info['placa'],
+        'ano'            => $os_info['ano'],
+        'cor'            => $os_info['cor'],
+        'km_atual'       => $os_info['km_atual'],
+    ];
+    $id_os = (int)$os_info['id_os'];
+} else {
     $conn->close();
     redirecionar('orcamentos.php?msg=erro');
 }
 
-// ===== BUSCA O ORÇAMENTO =====
-$stmt = $conn->prepare("
-    SELECT o.*,
-           os.id_os, os.numero_os, os.status AS os_status, os.descricao_problema, os.diagnostico,
-           cl.nome AS cliente_nome, cl.telefone AS cliente_telefone, cl.whatsapp AS cliente_whatsapp, cl.email AS cliente_email,
-           cr.marca, cr.modelo, cr.placa, cr.ano, cr.cor, cr.km_atual
-    FROM os_orcamentos o
-    INNER JOIN ordens_servico os ON os.id_os = o.id_os
-    INNER JOIN clientes cl ON cl.id_cliente = os.id_cliente
-    INNER JOIN carros cr ON cr.id_carro = os.id_carro
-    WHERE o.id_orcamento = ? LIMIT 1
-");
-$stmt->bind_param('i', $id_orcamento);
-$stmt->execute();
-$orcamento = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+// =========================================================
+// ITENS
+// =========================================================
+$itens = [];
+if ($id_orcamento > 0) {
+    $stmt = $conn->prepare("
+        SELECT * FROM os_orcamento_itens
+        WHERE id_orcamento = ?
+        ORDER BY tipo DESC, id_item ASC
+    ");
+    $stmt->bind_param('i', $id_orcamento);
+    $stmt->execute();
+    $itens = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+} else {
+    // MODO CRIAÇÃO: puxa as solicitações pendentes
+    $stmt = $conn->prepare("
+        SELECT sp.id_solicitacao, sp.nome_peca, sp.quantidade, sp.id_estoque,
+               e.valor_venda, e.categoria, e.marca, e.quantidade AS estoque_qtd
+        FROM os_solicitacoes_peca sp
+        LEFT JOIN estoque e ON e.id_estoque = sp.id_estoque
+        WHERE sp.id_os = ? AND sp.status = 'pendente'
+        ORDER BY sp.id_solicitacao ASC
+    ");
+    $stmt->bind_param('i', $id_os);
+    $stmt->execute();
+    $solicitacoes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 
-if (!$orcamento) {
-    $conn->close();
-    redirecionar('orcamentos.php?msg=erro');
+    foreach ($solicitacoes as $s) {
+        $itens[] = [
+            'id_item'          => 0,
+            'id_orcamento'     => 0,
+            'tipo'             => 'peca',
+            'descricao'        => $s['nome_peca'],
+            'id_estoque'       => $s['id_estoque'],
+            'id_solicitacao_peca' => $s['id_solicitacao'],
+            'quantidade'       => $s['quantidade'],
+            'valor_unitario'   => (float)($s['valor_venda'] ?? 0),
+            'valor_total'      => $s['quantidade'] * (float)($s['valor_venda'] ?? 0),
+            'observacoes'      => null,
+        ];
+    }
 }
 
-// ===== BUSCA OS ITENS =====
-$stmt = $conn->prepare("
-    SELECT * FROM os_orcamento_itens
-    WHERE id_orcamento = ?
-    ORDER BY tipo DESC, id_item ASC
-");
-$stmt->bind_param('i', $id_orcamento);
-$stmt->execute();
-$itens = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
+// =========================================================
+// PAGAMENTOS
+// =========================================================
+$pagamentos = [];
+if ($id_orcamento > 0) {
+    $stmt = $conn->prepare("
+        SELECT p.*, u.nome AS usuario_nome
+        FROM os_orcamento_pagamentos p
+        LEFT JOIN usuarios u ON u.id_usuario = p.id_usuario_registrou
+        WHERE p.id_orcamento = ?
+        ORDER BY p.id_pagamento DESC
+    ");
+    $stmt->bind_param('i', $id_orcamento);
+    $stmt->execute();
+    $pagamentos = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+}
 
-// ===== BUSCA OS PAGAMENTOS =====
-$stmt = $conn->prepare("
-    SELECT p.*, u.nome AS usuario_nome
-    FROM os_orcamento_pagamentos p
-    LEFT JOIN usuarios u ON u.id_usuario = p.id_usuario_registrou
-    WHERE p.id_orcamento = ?
-    ORDER BY p.id_pagamento DESC
-");
-$stmt->bind_param('i', $id_orcamento);
-$stmt->execute();
-$pagamentos = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
-
-// ===== CALCULA TEMPO APONTADO E MÃO DE OBRA SUGERIDA =====
+// =========================================================
+// TEMPO + MÃO DE OBRA
+// =========================================================
 $stmt = $conn->prepare("
     SELECT COALESCE(SUM(TIMESTAMPDIFF(MINUTE, data_apontamento,
         COALESCE(data_desapontamento, NOW()))), 0) AS total_min
     FROM os_apontamentos
     WHERE id_os = ?
 ");
-$stmt->bind_param('i', $orcamento['id_os']);
+$stmt->bind_param('i', $id_os);
 $stmt->execute();
 $tempo_total_min = (int)$stmt->get_result()->fetch_assoc()['total_min'];
 $stmt->close();
@@ -84,10 +208,7 @@ $stmt = $conn->prepare("SELECT valor_venda FROM estoque WHERE codigo = 'MO-001' 
 $stmt->execute();
 $mo_item = $stmt->get_result()->fetch_assoc();
 $stmt->close();
-
-if ($mo_item) {
-    $valor_hora_mo = (float)$mo_item['valor_venda'];
-}
+if ($mo_item) $valor_hora_mo = (float)$mo_item['valor_venda'];
 
 $valor_minuto = $valor_hora_mo / 60;
 $mao_obra_sugerida = $valor_minuto * $tempo_total_min;
@@ -99,10 +220,10 @@ if ($horas > 0) $tempo_formatado .= $horas . 'h';
 if ($minutos > 0) $tempo_formatado .= ($horas > 0 ? ' ' : '') . $minutos . 'min';
 if ($tempo_formatado === '') $tempo_formatado = '0min';
 
-$conn->close();
-
-
-$editavel = in_array($orcamento['status'], ['rascunho', 'aguardando_revisao', 'pronto_para_envio']);
+// =========================================================
+// ESTADOS
+// =========================================================
+$editavel = in_array($orcamento['status'], ['novo', 'gerado_enviado']) || $id_orcamento === 0;
 
 $url_publica = '';
 if (!empty($orcamento['token_publico'])) {
@@ -110,15 +231,20 @@ if (!empty($orcamento['token_publico'])) {
     $host = $_SERVER['HTTP_HOST'];
     $url_publica = $protocolo . '://' . $host . '/mtech_system/pagar.php?token=' . $orcamento['token_publico'];
 }
+
+$tem_adendo = !empty($orcamento['adendo_status']) && $orcamento['adendo_status'] !== 'nenhum';
+
+$conn->close();
+require_once '_header.php';
 ?>
 
 <div class="admin-topo-pagina">
     <h1 class="admin-titulo-pagina">
         <a href="orcamentos.php" class="admin-voltar" title="Voltar"><i class="fas fa-arrow-left"></i></a>
-        Orçamento <?php echo limpar($orcamento['numero_orcamento']); ?>
-        <?php if ((int)$orcamento['versao'] > 1): ?>
-            <span class="admin-badge admin-badge-info"
-                style="font-size:12px; margin-left:8px;">v<?php echo (int)$orcamento['versao']; ?></span>
+        <?php if ($id_orcamento > 0): ?>
+            Orçamento <?php echo limpar($orcamento['numero_orcamento']); ?>
+        <?php else: ?>
+            Novo Orçamento — OS <?php echo limpar($orcamento['numero_os']); ?>
         <?php endif; ?>
     </h1>
 </div>
@@ -126,11 +252,11 @@ if (!empty($orcamento['token_publico'])) {
 <?php
 $msg = $_GET['msg'] ?? '';
 $mensagens = [
-    'editado'    => ['texto' => 'Orçamento atualizado!', 'tipo' => 'sucesso'],
-    'item_add'   => ['texto' => 'Item adicionado.', 'tipo' => 'sucesso'],
-    'item_del'   => ['texto' => 'Item removido.', 'tipo' => 'alerta'],
-    'enviado'    => ['texto' => 'Orçamento enviado ao cliente! Novo link gerado.', 'tipo' => 'sucesso'],
-    'erro'       => ['texto' => 'Ocorreu um erro.', 'tipo' => 'erro'],
+    'editado'   => ['texto' => 'Orçamento atualizado!', 'tipo' => 'sucesso'],
+    'item_add'  => ['texto' => 'Item adicionado.', 'tipo' => 'sucesso'],
+    'item_del'  => ['texto' => 'Item removido.', 'tipo' => 'alerta'],
+    'enviado'   => ['texto' => 'Orçamento enviado ao cliente!', 'tipo' => 'sucesso'],
+    'erro'      => ['texto' => 'Ocorreu um erro.', 'tipo' => 'erro'],
     'erro_obrig' => ['texto' => 'Preencha os campos obrigatórios.', 'tipo' => 'erro'],
 ];
 if (!empty($msg) && isset($mensagens[$msg])):
@@ -143,40 +269,33 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </div>
 <?php endif; ?>
 
-<!-- ===== STATUS + AÇÕES ===== -->
+<!-- ===== STATUS ===== -->
 <div class="admin-bloco">
     <div class="admin-bloco-titulo">
         <span><i class="fas fa-info-circle"></i> Status</span>
-        <span class="admin-badge <?php echo classeStatusOrc($orcamento['status']); ?>"
-            style="font-size:13px; padding:6px 14px;">
-            <?php echo nomeStatusOrc($orcamento['status']); ?>
-        </span>
+        <?php if ($id_orcamento > 0): ?>
+            <span class="admin-badge <?php echo classeStatusOrc($orcamento['status']); ?>"
+                style="font-size:13px; padding:6px 14px;">
+                <?php echo nomeStatusOrc($orcamento['status']); ?>
+            </span>
+            <?php if ($tem_adendo): ?>
+                <span class="admin-badge <?php echo classeStatusAdendo($orcamento['adendo_status']); ?>"
+                    style="font-size:13px; padding:6px 14px; margin-left:8px;">
+                    <?php echo nomeStatusAdendo($orcamento['adendo_status']); ?>
+                </span>
+            <?php endif; ?>
+        <?php else: ?>
+            <span class="admin-badge admin-badge-alerta" style="font-size:13px; padding:6px 14px;">
+                Novo — ainda não criado
+            </span>
+        <?php endif; ?>
     </div>
 
-    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-
-        <?php if ($orcamento['status'] === 'enviado'): ?>
-            <span class="admin-badge admin-badge-info" style="font-size:13px; padding:8px 16px;">
-                <i class="fas fa-clock"></i> Aguardando o cliente pagar no link
-            </span>
-        <?php endif; ?>
-
-        <?php if ($orcamento['status'] === 'aprovado'): ?>
-            <span class="admin-badge admin-badge-sucesso" style="font-size:13px; padding:8px 16px;">
-                <i class="fas fa-check-double"></i> Aprovado — siga pra Pagamentos
-            </span>
-            <a href="pagamentos.php" class="admin-btn admin-btn-secundario">
-                <i class="fas fa-dollar-sign"></i> Ir pra Pagamentos
-            </a>
-        <?php endif; ?>
-
-        <?php if ($orcamento['status'] === 'recusado'): ?>
-            <span class="admin-badge admin-badge-erro" style="font-size:13px; padding:8px 16px;">
-                <i class="fas fa-ban"></i> Recusado pelo cliente
-            </span>
-        <?php endif; ?>
-
-    </div>
+    <?php if ($id_orcamento === 0): ?>
+        <p style="font-size:14px; color:var(--mtech-text-muted);">
+            Revise os itens abaixo e clique em <strong>"Criar e Enviar Orçamento"</strong> para criar e enviar.
+        </p>
+    <?php endif; ?>
 </div>
 
 <!-- ===== LINK PÚBLICO ===== -->
@@ -190,15 +309,15 @@ if (!empty($msg) && isset($mensagens[$msg])):
                 <i class="fas fa-copy"></i> Copiar
             </button>
             <a href="orcamentos_pdf.php?id=<?php echo $id_orcamento; ?>" target="_blank" class="admin-btn">
-                <i class="fas fa-file-pdf"></i> Ver PDF
+                <i class="fas fa-file-pdf"></i> PDF
             </a>
         </div>
 
-        <small class="admin-dica">Manda esse link pro cliente. Ele abre uma página com Pix e cartão.</small>
+        <small class="admin-dica">Envie esse link pro cliente.</small>
     </div>
 <?php endif; ?>
 
-<!-- ===== DADOS DO CLIENTE E VEÍCULO ===== -->
+<!-- ===== CLIENTE E VEÍCULO ===== -->
 <div class="admin-bloco">
     <div class="admin-bloco-titulo"><span><i class="fas fa-user"></i> Cliente e Veículo</span></div>
     <div class="admin-form-grid">
@@ -235,10 +354,11 @@ if (!empty($msg) && isset($mensagens[$msg])):
     <?php endif; ?>
 </div>
 
-<!-- ===== ITENS DO ORÇAMENTO + RESUMO ===== -->
+<!-- ===== ITENS ===== -->
 <form action="orcamentos_acao.php" method="POST" id="formItensOrcamento">
     <input type="hidden" name="acao" value="salvar_itens">
     <input type="hidden" name="id_orcamento" value="<?php echo $id_orcamento; ?>">
+    <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
 
     <div class="admin-bloco">
         <div class="admin-bloco-titulo">
@@ -284,10 +404,6 @@ if (!empty($msg) && isset($mensagens[$msg])):
                                     <?php else: ?>
                                         <strong><?php echo limpar($it['descricao']); ?></strong>
                                     <?php endif; ?>
-                                    <?php if (!empty($it['observacoes'])): ?>
-                                        <br><small
-                                            style="color:var(--mtech-text-muted);"><?php echo limpar($it['observacoes']); ?></small>
-                                    <?php endif; ?>
                                 </td>
                                 <td style="text-align:center;">
                                     <?php if ($editavel): ?>
@@ -313,9 +429,14 @@ if (!empty($msg) && isset($mensagens[$msg])):
                                     R$ <?php echo number_format((float)$it['valor_total'], 2, ',', '.'); ?>
                                 </td>
                                 <td style="text-align:right;">
-                                    <?php if ($editavel): ?>
+                                    <?php if ($editavel && $it['id_item'] > 0): ?>
                                         <button type="button" class="admin-btn-acao admin-btn-acao-erro" title="Remover"
                                             onclick="removerItem(<?php echo (int)$it['id_item']; ?>)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    <?php elseif ($editavel && $it['id_item'] == 0): ?>
+                                        <button type="button" class="admin-btn-acao admin-btn-acao-erro" title="Remover"
+                                            onclick="this.closest('tr').remove(); recalcularTotal();">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     <?php endif; ?>
@@ -328,40 +449,34 @@ if (!empty($msg) && isset($mensagens[$msg])):
         <?php endif; ?>
     </div>
 
-    <!-- ===== ADICIONAR ITEM ===== -->
     <?php if ($editavel): ?>
         <div class="admin-bloco">
             <div class="admin-bloco-titulo"><span><i class="fas fa-plus-circle"></i> Adicionar Item</span></div>
 
             <div class="admin-alerta admin-alerta-alerta" style="margin-bottom:15px;">
                 <i class="fas fa-info-circle"></i>
-                <div>
-                    Digite o nome da peça ou serviço. Se tiver no estoque ou no catálogo, o sistema mostra sugestões. Se não
-                    achar, use o botão <strong>"Item Livre"</strong> ao lado.
+                <div>Digite o nome da peça ou serviço. Se tiver no estoque, o sistema sugere. Se não achar, use
+                    <strong>"Item Livre"</strong>.
                 </div>
             </div>
 
-            <!-- Campo de busca -->
             <div style="position:relative; margin-bottom:15px;">
                 <div class="admin-input-grupo">
-                    <input type="text" id="buscaItem" placeholder="Ex: Filtro de óleo, Troca de pastilha..."
-                        autocomplete="off" style="flex:1;">
-                    <button type="button" class="admin-btn admin-btn-secundario" onclick="limparBusca()"
-                        title="Limpar busca">
+                    <input type="text" id="buscaItem" placeholder="Ex: Filtro de óleo..." autocomplete="off"
+                        style="flex:1;">
+                    <button type="button" class="admin-btn admin-btn-secundario" onclick="limparBusca()">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <div id="listaBusca" class="admin-autocomplete-lista" style="display:none;"></div>
             </div>
 
-            <!-- Botão Item Livre FORA do input-grupo -->
             <div style="margin-bottom:15px;">
                 <button type="button" class="admin-btn" onclick="abrirItemLivre()" style="width:100%;">
-                    <i class="fas fa-plus-circle"></i> Adicionar Item Livre (não está no estoque nem no catálogo)
+                    <i class="fas fa-plus-circle"></i> Adicionar Item Livre
                 </button>
             </div>
 
-            <!-- Resultado da seleção -->
             <div id="itemSelecionado"
                 style="display:none; padding:15px; border:1px solid var(--mtech-border); border-radius:8px; background:rgba(37, 211, 102, 0.05);">
                 <div style="display:grid; grid-template-columns: 3fr 100px 140px 42px; gap:10px; align-items:end;">
@@ -380,12 +495,11 @@ if (!empty($msg) && isset($mensagens[$msg])):
                     <div>
                         <label
                             style="font-size:11px; color:var(--mtech-text-muted); display:block; margin-bottom:5px;">Valor
-                            Un. (R$)</label>
+                            Un.</label>
                         <input type="number" id="sel_valor" value="0.00" min="0" step="0.01"
                             style="width:100%; padding:10px 8px; background:var(--mtech-bg); color:var(--mtech-text); border:1px solid var(--mtech-border); border-radius:6px; font-family:Poppins; font-size:13px; text-align:right;">
                     </div>
-                    <button type="button" class="admin-btn" onclick="adicionarItem()" title="Adicionar"
-                        style="height:42px;">
+                    <button type="button" class="admin-btn" onclick="adicionarItem()" style="height:42px;">
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>
@@ -396,7 +510,6 @@ if (!empty($msg) && isset($mensagens[$msg])):
         </div>
     <?php endif; ?>
 
-    <!-- ===== RESUMO + BOTÃO SALVAR ===== -->
     <div class="admin-bloco">
         <div class="admin-bloco-titulo"><span><i class="fas fa-calculator"></i> Resumo</span></div>
 
@@ -406,30 +519,16 @@ if (!empty($msg) && isset($mensagens[$msg])):
                 <input type="number" id="valor_mao_obra" name="valor_mao_obra" min="0" step="0.01" value="<?php
                                                                                                             $mo_atual = (float)$orcamento['valor_mao_obra'];
                                                                                                             echo $mo_atual > 0 ? number_format($mo_atual, 2, '.', '') : number_format($mao_obra_sugerida, 2, '.', '');
-                                                                                                            ?>"
-                    <?php echo !$editavel ? 'disabled' : ''; ?> onchange="recalcularTotal()"
+                                                                                                            ?>" <?php echo !$editavel ? 'disabled' : ''; ?> onchange="recalcularTotal()"
                     oninput="recalcularTotal()">
 
                 <?php if ($tempo_total_min > 0 && $valor_hora_mo > 0): ?>
-                    <small class="admin-dica" style="display:block; margin-top:6px; line-height:1.5;">
+                    <small class="admin-dica" style="display:block; margin-top:6px;">
                         <i class="fas fa-calculator"></i>
-                        Tempo apontado: <strong><?php echo $tempo_formatado; ?></strong>
-                        (<?php echo $tempo_total_min; ?> min) ×
-                        R$ <?php echo number_format($valor_hora_mo, 2, ',', '.'); ?>/hora
-                        =
+                        Tempo apontado: <strong><?php echo $tempo_formatado; ?></strong> ×
+                        R$ <?php echo number_format($valor_hora_mo, 2, ',', '.'); ?>/hora =
                         <strong style="color: var(--mtech-yellow);">R$
-                            <?php echo number_format($mao_obra_sugerida, 2, ',', '.'); ?></strong> sugerido
-                        <br>
-                        <em>Pode arredondar ou ajustar livremente.</em>
-                    </small>
-                <?php elseif ($tempo_total_min === 0): ?>
-                    <small class="admin-dica" style="display:block; margin-top:6px;">
-                        <i class="fas fa-info-circle"></i> Nenhum tempo apontado nessa OS ainda.
-                    </small>
-                <?php elseif ($valor_hora_mo === 0): ?>
-                    <small class="admin-dica" style="display:block; margin-top:6px;">
-                        <i class="fas fa-exclamation-triangle" style="color: var(--mtech-yellow);"></i>
-                        Item "Mão de Obra" (MO-001) não encontrado no estoque.
+                            <?php echo number_format($mao_obra_sugerida, 2, ',', '.'); ?></strong>
                     </small>
                 <?php endif; ?>
             </div>
@@ -454,7 +553,6 @@ if (!empty($msg) && isset($mensagens[$msg])):
             <div class="admin-form-campo admin-form-campo-full">
                 <label for="observacoes_orc">Observações pro cliente</label>
                 <textarea id="observacoes_orc" name="observacoes" rows="3"
-                    placeholder="Ex: Garantia de 90 dias nos serviços."
                     <?php echo !$editavel ? 'disabled' : ''; ?>><?php echo limpar($orcamento['observacoes'] ?? ''); ?></textarea>
             </div>
         </div>
@@ -467,33 +565,68 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </div>
 </form>
 
-<!-- ===== AÇÕES DE ENVIO ===== -->
+<!-- ===== ENVIAR ===== -->
 <?php if ($editavel): ?>
     <div class="admin-bloco">
         <div class="admin-bloco-titulo"><span><i class="fas fa-paper-plane"></i> Enviar ao Cliente</span></div>
 
         <p style="font-size:14px; color:var(--mtech-text-muted); margin-bottom:15px;">
-            Ao enviar, o sistema gera um <strong>link novo</strong> (o antigo deixa de funcionar) e o cliente pode pagar por
-            Pix ou cartão.
+            Ao enviar, o sistema gera o link e o cliente pode aprovar e pagar.
         </p>
 
         <form action="orcamentos_acao.php" method="POST">
             <input type="hidden" name="acao" value="enviar">
             <input type="hidden" name="id_orcamento" value="<?php echo $id_orcamento; ?>">
-            <button type="submit" class="admin-btn"
-                onclick="return confirm('Enviar este orçamento ao cliente?\n\nUm novo link será gerado. O link anterior deixará de funcionar.');">
+            <input type="hidden" name="id_os" value="<?php echo $id_os; ?>">
+            <button type="submit" class="admin-btn" onclick="return confirm('Enviar este orçamento ao cliente?');">
                 <i class="fas fa-paper-plane"></i>
-                <?php echo $orcamento['status'] === 'enviado' ? 'Reenviar (gera novo link)' : 'Enviar ao Cliente'; ?>
+                <?php echo $id_orcamento === 0 ? 'Criar e Enviar Orçamento' : 'Enviar ao Cliente'; ?>
             </button>
         </form>
     </div>
 <?php endif; ?>
 
-<!-- ===== PAGAMENTOS REGISTRADOS ===== -->
+<!-- ===== APROVAR MANUAL / ADENDO ===== -->
+<?php if ($id_orcamento > 0 && $orcamento['status'] === 'gerado_enviado'): ?>
+    <div class="admin-bloco">
+        <div class="admin-bloco-titulo"><span><i class="fas fa-check-circle"></i> Ações</span></div>
+
+        <form action="orcamentos_acao.php" method="POST" style="display:inline;">
+            <input type="hidden" name="acao" value="aprovar_manual">
+            <input type="hidden" name="id_orcamento" value="<?php echo $id_orcamento; ?>">
+            <button type="submit" class="admin-btn" onclick="return confirm('Aprovar o orçamento manualmente?');">
+                <i class="fas fa-check"></i> Aprovar Manualmente
+            </button>
+        </form>
+    </div>
+<?php endif; ?>
+
+<?php if ($tem_adendo && $orcamento['adendo_status'] === 'enviado'): ?>
+    <div class="admin-bloco">
+        <div class="admin-bloco-titulo"><span><i class="fas fa-layer-group"></i> Adendo</span></div>
+
+        <form action="orcamentos_acao.php" method="POST" style="display:inline;">
+            <input type="hidden" name="acao" value="aprovar_adendo">
+            <input type="hidden" name="id_orcamento" value="<?php echo $id_orcamento; ?>">
+            <button type="submit" class="admin-btn"><i class="fas fa-check"></i> Aprovar Adendo</button>
+        </form>
+
+        <form action="orcamentos_acao.php" method="POST" style="display:inline;">
+            <input type="hidden" name="acao" value="reprovar_adendo">
+            <input type="hidden" name="id_orcamento" value="<?php echo $id_orcamento; ?>">
+            <button type="submit" class="admin-btn admin-btn-secundario"
+                style="border-color:var(--mtech-red); color:var(--mtech-red);">
+                <i class="fas fa-times"></i> Reprovar Adendo
+            </button>
+        </form>
+    </div>
+<?php endif; ?>
+
+<!-- ===== PAGAMENTOS ===== -->
 <?php if (!empty($pagamentos)): ?>
     <div class="admin-bloco">
         <div class="admin-bloco-titulo">
-            <span><i class="fas fa-dollar-sign"></i> Pagamentos Registrados</span>
+            <span><i class="fas fa-dollar-sign"></i> Pagamentos</span>
             <span><?php echo count($pagamentos); ?></span>
         </div>
 
@@ -530,7 +663,7 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </div>
 <?php endif; ?>
 
-<!-- Form escondido pra remoção individual -->
+<!-- Form escondido pra remoção -->
 <form action="orcamentos_acao.php" method="POST" id="formRemoverItem" style="display:none;">
     <input type="hidden" name="acao" value="item_excluir">
     <input type="hidden" name="id_orcamento" value="<?php echo $id_orcamento; ?>">
@@ -538,9 +671,6 @@ if (!empty($msg) && isset($mensagens[$msg])):
 </form>
 
 <script>
-    // =========================================================
-    // EDIÇÃO INLINE — recalcula total ao digitar
-    // =========================================================
     function recalcularLinha(input) {
         const tr = input.closest('tr');
         const qtd = parseFloat(tr.querySelector('.input-qtd').value) || 0;
@@ -565,37 +695,26 @@ if (!empty($msg) && isset($mensagens[$msg])):
             const valor = parseFloat(tr.querySelector('.input-valor')?.value) || 0;
             const subtotal = qtd * valor;
 
-            if (tipo.includes('Peça')) {
-                totalPecas += subtotal;
-            } else {
-                totalServicos += subtotal;
-            }
+            if (tipo.includes('Peça')) totalPecas += subtotal;
+            else totalServicos += subtotal;
         });
 
-        const elMaoObra = document.getElementById('valor_mao_obra');
-        const elDesconto = document.getElementById('valor_desconto');
-        const maoObra = elMaoObra ? (parseFloat(elMaoObra.value) || 0) : 0;
-        const desconto = elDesconto ? (parseFloat(elDesconto.value) || 0) : 0;
+        const mo = document.getElementById('valor_mao_obra');
+        const desc = document.getElementById('valor_desconto');
+        const maoObra = mo ? (parseFloat(mo.value) || 0) : 0;
+        const desconto = desc ? (parseFloat(desc.value) || 0) : 0;
         const total = totalPecas + totalServicos + maoObra - desconto;
 
         const elTotal = document.getElementById('totalExibido');
-        if (elTotal) {
-            elTotal.value = 'R$ ' + (total < 0 ? 0 : total).toFixed(2).replace('.', ',');
-        }
+        if (elTotal) elTotal.value = 'R$ ' + (total < 0 ? 0 : total).toFixed(2).replace('.', ',');
     }
 
-    // =========================================================
-    // REMOVER ITEM
-    // =========================================================
     function removerItem(id) {
         if (!confirm('Remover este item?')) return;
         document.getElementById('remove_id_item').value = id;
         document.getElementById('formRemoverItem').submit();
     }
 
-    // =========================================================
-    // ABRIR ITEM LIVRE (botão fixo)
-    // =========================================================
     function abrirItemLivre() {
         document.getElementById('sel_tipo').value = 'peca';
         document.getElementById('sel_descricao').value = '';
@@ -605,38 +724,21 @@ if (!empty($msg) && isset($mensagens[$msg])):
         document.getElementById('sel_id_servico').value = '';
         document.getElementById('itemSelecionado').style.display = 'block';
         setTimeout(() => document.getElementById('sel_descricao').focus(), 100);
-        document.getElementById('itemSelecionado').scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-        });
     }
 
-    // =========================================================
-    // BUSCA UNIFICADA — estoque + serviços
-    // =========================================================
     const campoBusca = document.getElementById('buscaItem');
     const listaBusca = document.getElementById('listaBusca');
-
     let timerBusca = null;
 
     if (campoBusca) {
         campoBusca.addEventListener('input', () => {
             const termo = campoBusca.value.trim();
-
             if (termo.length < 2) {
                 listaBusca.style.display = 'none';
                 return;
             }
-
             clearTimeout(timerBusca);
             timerBusca = setTimeout(() => buscarItens(termo), 250);
-        });
-
-        campoBusca.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                listaBusca.style.display = 'none';
-                campoBusca.blur();
-            }
         });
 
         document.addEventListener('click', (e) => {
@@ -652,10 +754,8 @@ if (!empty($msg) && isset($mensagens[$msg])):
                 fetch(`orcamentos_buscar_estoque.php?termo=${encodeURIComponent(termo)}`),
                 fetch(`orcamentos_buscar_servicos.php?termo=${encodeURIComponent(termo)}`)
             ]);
-
             const estoque = await rEstoque.json();
             const servicos = await rServicos.json();
-
             renderizarLista(estoque, servicos);
         } catch (err) {
             console.error(err);
@@ -664,62 +764,34 @@ if (!empty($msg) && isset($mensagens[$msg])):
 
     function renderizarLista(estoque, servicos) {
         const termoOriginal = campoBusca.value.trim();
-
         let html = '';
         let temResultado = false;
 
         if (estoque.length > 0) {
             temResultado = true;
-            html += `<div style="padding:8px 14px; background:rgba(74, 144, 226, 0.08); font-size:11px; text-transform:uppercase; color:var(--mtech-text-muted); letter-spacing:1px; font-weight:600;">
-            <i class="fas fa-boxes"></i> Estoque
-        </div>`;
+            html +=
+                `<div style="padding:8px 14px; background:rgba(74,144,226,0.08); font-size:11px; text-transform:uppercase; color:var(--mtech-text-muted); font-weight:600;"><i class="fas fa-boxes"></i> Estoque</div>`;
             estoque.forEach(item => {
-                html += `
-                <div class="admin-autocomplete-item item-busca" 
-                     data-tipo="peca"
-                     data-id-estoque="${item.id_estoque}"
-                     data-descricao="${item.nome.replace(/"/g, '&quot;')}"
-                     data-valor="${item.valor_venda}"
-                     data-estoque="${item.quantidade}">
-                    <strong>${item.nome}</strong>
-                    <small>${item.codigo ? 'Código: ' + item.codigo + ' — ' : ''}${item.marca || ''} ${item.categoria ? '— ' + item.categoria : ''} — <span style="color:${item.quantidade > 0 ? '#25d366' : '#D62D2D'};">Qtd: ${item.quantidade}</span> — R$ ${parseFloat(item.valor_venda).toFixed(2).replace('.', ',')}</small>
-                </div>
-            `;
+                html +=
+                    `<div class="admin-autocomplete-item item-busca" data-tipo="peca" data-id-estoque="${item.id_estoque}" data-descricao="${item.nome.replace(/"/g, '&quot;')}" data-valor="${item.valor_venda}"><strong>${item.nome}</strong><small>Qtd: ${item.quantidade} — R$ ${parseFloat(item.valor_venda).toFixed(2).replace('.', ',')}</small></div>`;
             });
         }
 
         if (servicos.length > 0) {
             temResultado = true;
-            html += `<div style="padding:8px 14px; background:rgba(235, 175, 0, 0.08); font-size:11px; text-transform:uppercase; color:var(--mtech-text-muted); letter-spacing:1px; font-weight:600;">
-            <i class="fas fa-wrench"></i> Serviços
-        </div>`;
+            html +=
+                `<div style="padding:8px 14px; background:rgba(235,175,0,0.08); font-size:11px; text-transform:uppercase; color:var(--mtech-text-muted); font-weight:600;"><i class="fas fa-wrench"></i> Serviços</div>`;
             servicos.forEach(serv => {
                 const valor = serv.valor_fixo || 0;
-                html += `
-                <div class="admin-autocomplete-item item-busca" 
-                     data-tipo="servico"
-                     data-id-servico="${serv.id_servico}"
-                     data-descricao="${serv.nome.replace(/"/g, '&quot;')}"
-                     data-valor="${valor}">
-                    <strong>${serv.nome}</strong>
-                    <small>${serv.descricao || ''} ${valor > 0 ? '— R$ ' + valor.toFixed(2).replace('.', ',') : ''}</small>
-                </div>
-            `;
+                html +=
+                    `<div class="admin-autocomplete-item item-busca" data-tipo="servico" data-id-servico="${serv.id_servico}" data-descricao="${serv.nome.replace(/"/g, '&quot;')}" data-valor="${valor}"><strong>${serv.nome}</strong><small>${valor > 0 ? 'R$ ' + valor.toFixed(2).replace('.', ',') : ''}</small></div>`;
             });
         }
 
-        // Sempre mostra a opção de item livre com o termo digitado
-        html += `<div style="padding:8px 14px; background:rgba(37, 211, 102, 0.08); font-size:11px; text-transform:uppercase; color:var(--mtech-text-muted); letter-spacing:1px; font-weight:600;">
-        <i class="fas fa-pen"></i> ${temResultado ? 'Ou adicione item livre' : 'Nenhum resultado no estoque/serviços'}
-    </div>`;
-        html += `
-        <div class="admin-autocomplete-item item-busca-livre" data-descricao-livre="${termoOriginal.replace(/"/g, '&quot;')}" style="background:rgba(37, 211, 102, 0.05); border-left:3px solid #25d366;">
-            <strong style="color:#25d366;">
-                <i class="fas fa-plus-circle"></i> Adicionar "${termoOriginal}"
-            </strong>
-            <small>Item livre (não vinculado ao estoque)</small>
-        </div>
-    `;
+        html +=
+            `<div style="padding:8px 14px; background:rgba(37,211,102,0.08); font-size:11px; text-transform:uppercase; color:var(--mtech-text-muted); font-weight:600;"><i class="fas fa-pen"></i> ${temResultado ? 'Ou adicione item livre' : 'Nenhum resultado'}</div>`;
+        html +=
+            `<div class="admin-autocomplete-item item-busca-livre" data-descricao-livre="${termoOriginal.replace(/"/g, '&quot;')}" style="background:rgba(37,211,102,0.05); border-left:3px solid #25d366;"><strong style="color:#25d366;"><i class="fas fa-plus-circle"></i> Adicionar "${termoOriginal}"</strong><small>Item livre</small></div>`;
 
         listaBusca.innerHTML = html;
         listaBusca.style.display = 'block';
@@ -730,7 +802,6 @@ if (!empty($msg) && isset($mensagens[$msg])):
                 selecionarItem(item);
             });
         });
-
         listaBusca.querySelectorAll('.item-busca-livre').forEach(item => {
             item.addEventListener('mousedown', (e) => {
                 e.preventDefault();
@@ -740,17 +811,12 @@ if (!empty($msg) && isset($mensagens[$msg])):
     }
 
     function selecionarItem(el) {
-        const tipo = el.dataset.tipo;
-        const descricao = el.dataset.descricao;
-        const valor = el.dataset.valor;
-
-        document.getElementById('sel_tipo').value = tipo;
-        document.getElementById('sel_descricao').value = descricao;
-        document.getElementById('sel_valor').value = valor;
+        document.getElementById('sel_tipo').value = el.dataset.tipo;
+        document.getElementById('sel_descricao').value = el.dataset.descricao;
+        document.getElementById('sel_valor').value = el.dataset.valor;
         document.getElementById('sel_qtd').value = 1;
         document.getElementById('sel_id_estoque').value = el.dataset.idEstoque || '';
         document.getElementById('sel_id_servico').value = el.dataset.idServico || '';
-
         document.getElementById('itemSelecionado').style.display = 'block';
         listaBusca.style.display = 'none';
         campoBusca.value = '';
@@ -773,14 +839,8 @@ if (!empty($msg) && isset($mensagens[$msg])):
         campoBusca.value = '';
         listaBusca.style.display = 'none';
         document.getElementById('itemSelecionado').style.display = 'none';
-        document.getElementById('sel_tipo').value = '';
-        document.getElementById('sel_id_estoque').value = '';
-        document.getElementById('sel_id_servico').value = '';
     }
 
-    // =========================================================
-    // ADICIONAR ITEM (via AJAX)
-    // =========================================================
     async function adicionarItem() {
         const tipo = document.getElementById('sel_tipo').value;
         const descricao = document.getElementById('sel_descricao').value;
@@ -788,15 +848,38 @@ if (!empty($msg) && isset($mensagens[$msg])):
         const valor = parseFloat(document.getElementById('sel_valor').value) || 0;
         const idEstoque = document.getElementById('sel_id_estoque').value;
         const idServico = document.getElementById('sel_id_servico').value;
+        const idOrcamento = <?php echo $id_orcamento; ?>;
 
         if (!descricao || qtd <= 0) {
             alert('Preencha descrição e quantidade.');
             return;
         }
 
+        if (idOrcamento === 0) {
+            const tabela = document.querySelector('#tabelaItens tbody');
+            if (!tabela) {
+                location.reload();
+                return;
+            }
+
+            const novaLinha = document.createElement('tr');
+            novaLinha.innerHTML = `
+                <td><span class="admin-badge ${tipo === 'servico' ? 'admin-badge-alerta' : 'admin-badge-info'}">${tipo === 'servico' ? 'Serviço' : 'Peça'}</span></td>
+                <td><input type="text" value="${descricao.replace(/"/g, '&quot;')}" readonly style="width:100%; padding:8px 10px; background:var(--mtech-bg); color:var(--mtech-text); border:1px solid var(--mtech-border); border-radius:6px;"></td>
+                <td style="text-align:center;"><input type="number" value="${qtd}" min="0.01" step="0.01" class="input-qtd" readonly style="width:70px; padding:8px 6px; text-align:center;"></td>
+                <td style="text-align:right;"><input type="number" value="${valor}" min="0" step="0.01" class="input-valor" readonly style="width:100px; padding:8px 6px; text-align:right;"></td>
+                <td style="text-align:right; font-weight:600;" class="celula-total">R$ ${(qtd * valor).toFixed(2).replace('.', ',')}</td>
+                <td style="text-align:right;"><button type="button" class="admin-btn-acao admin-btn-acao-erro" onclick="this.closest('tr').remove(); recalcularTotal();"><i class="fas fa-trash"></i></button></td>
+            `;
+            tabela.appendChild(novaLinha);
+            recalcularTotal();
+            limparBusca();
+            return;
+        }
+
         const formData = new FormData();
         formData.append('acao', tipo === 'servico' ? 'item_add_servico' : 'item_add_peca');
-        formData.append('id_orcamento', <?php echo $id_orcamento; ?>);
+        formData.append('id_orcamento', idOrcamento);
         formData.append('descricao', descricao);
         formData.append('quantidade', qtd);
         formData.append('valor_unitario', valor);
@@ -808,25 +891,19 @@ if (!empty($msg) && isset($mensagens[$msg])):
                 method: 'POST',
                 body: formData
             });
-            window.location.href = 'orcamentos_ver.php?id=<?php echo $id_orcamento; ?>&msg=item_add';
+            window.location.href = 'orcamentos_ver.php?id_orcamento=' + idOrcamento + '&msg=item_add';
         } catch (err) {
             alert('Erro ao adicionar item.');
-            console.error(err);
         }
     }
 
-    // =========================================================
-    // COPIAR URL
-    // =========================================================
     function copiarUrl() {
         const input = document.getElementById('urlPublica');
         input.select();
-        input.setSelectionRange(0, 99999);
         document.execCommand('copy');
         alert('Link copiado!');
     }
 
-    // Recalcula ao carregar
     recalcularTotal();
 </script>
 
