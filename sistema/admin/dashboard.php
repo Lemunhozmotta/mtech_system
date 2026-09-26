@@ -49,27 +49,6 @@ $ultimas_os = $conn->query("
 
 $conn->close();
 
-// ===== HELPERS =====
-function nomeStatusDash($s)
-{
-    return [
-        'aberta' => 'Aberta',
-        'em_andamento' => 'Em Andamento',
-        'aguardando_peca' => 'Aguardando Peça',
-        'concluida' => 'Concluída',
-        'cancelada' => 'Cancelada',
-    ][$s] ?? $s;
-}
-function classeStatusDash($s)
-{
-    return [
-        'aberta' => 'admin-badge-info',
-        'em_andamento' => 'admin-badge-alerta',
-        'aguardando_peca' => 'admin-badge-erro',
-        'concluida' => 'admin-badge-sucesso',
-        'cancelada' => 'admin-badge-erro',
-    ][$s] ?? 'admin-badge-info';
-}
 ?>
 
 <h1 class="admin-titulo-pagina">Bem-vindo, <?php echo $primeiroNome; ?>! 👋</h1>

@@ -27,5 +27,5 @@ if (ini_get("session.use_cookies")) {
 session_destroy();
 
 // Redireciona pro site institucional (caminho absoluto)
-header('Location: /mtech_system/index.html');
+header('Location: https://mtechsystem.test/');
 exit;

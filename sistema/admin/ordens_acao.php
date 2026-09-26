@@ -1,6 +1,7 @@
 <?php
 /* =========================================================
    M-TECH SYSTEM — ORDENS DE SERVIÇO (ações)
+   Cadastrar + Editar
    ========================================================= */
 
 require_once '../conexao.php';
@@ -36,18 +37,15 @@ if ($acao === 'cadastrar') {
         exit;
     }
 
+    // Mecânico responsável inicial
     if ($nivel === 3) {
-        $id_mecanico_val = null;
+        $id_mecanico_val = $idUsuario;
     } else {
-        $id_mecanico_val = $id_mecanico > 0 ? $id_mecanico : null;
+        $id_mecanico_val = $id_mecanico > 0 ? $id_mecanico : 0;
     }
 
-    $ano = date('Y');
-    $res = $conn->query("SELECT MAX(CAST(SUBSTRING(numero_os, 6) AS UNSIGNED)) AS ultimo
-                         FROM ordens_servico WHERE numero_os LIKE '{$ano}-%'");
-    $row = $res->fetch_assoc();
-    $proximo = ((int)($row['ultimo'] ?? 0)) + 1;
-    $numero_os = $ano . '-' . str_pad($proximo, 4, '0', STR_PAD_LEFT);
+    // Número da OS
+    $numero_os = proximoNumeroOS($conn);
 
     $data_previsao_val = $data_previsao !== '' ? $data_previsao . ' 00:00:00' : null;
 
@@ -55,9 +53,18 @@ if ($acao === 'cadastrar') {
         INSERT INTO ordens_servico
         (numero_os, id_cliente, id_carro, id_mecanico, id_usuario_abertura,
          data_previsao, descricao_problema, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'aberta')
+        VALUES (?, ?, ?, NULLIF(?, 0), ?, ?, ?, 'aberta')
     ");
-    $stmt->bind_param('siiiiss', $numero_os, $id_cliente, $id_carro, $id_mecanico_val, $idUsuario, $data_previsao_val, $descricao_problema);
+    $stmt->bind_param(
+        'siiiiss',
+        $numero_os,
+        $id_cliente,
+        $id_carro,
+        $id_mecanico_val,
+        $idUsuario,
+        $data_previsao_val,
+        $descricao_problema
+    );
 
     if ($stmt->execute()) {
         $novo_id = $conn->insert_id;
@@ -120,12 +127,12 @@ if ($acao === 'editar') {
         exit;
     }
 
-    $id_mecanico_val = $id_mecanico > 0 ? $id_mecanico : null;
+    $id_mecanico_val = $id_mecanico > 0 ? $id_mecanico : 0;
     $data_previsao_val = $data_previsao !== '' ? $data_previsao . ' 00:00:00' : null;
     $diagnostico_val = $diagnostico !== '' ? $diagnostico : null;
     $solucao_val = $solucao !== '' ? $solucao : null;
 
-    // Mecânico apontado não mexe em id_mecanico
+    // Mecânico apontado NÃO pode trocar responsável
     if ($nivel === 3 && $estaApontado) {
         $stmt = $conn->prepare("
             UPDATE ordens_servico
@@ -137,7 +144,8 @@ if ($acao === 'editar') {
     } else {
         $stmt = $conn->prepare("
             UPDATE ordens_servico
-            SET id_mecanico = ?, data_previsao = ?, descricao_problema = ?,
+            SET id_mecanico = NULLIF(?, 0),
+                data_previsao = ?, descricao_problema = ?,
                 diagnostico = ?, solucao = ?
             WHERE id_os = ?
         ");

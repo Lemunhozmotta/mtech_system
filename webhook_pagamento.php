@@ -13,7 +13,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 // ===== VALIDAÇÃO BÁSICA =====
 $senha = $_POST['senha'] ?? $_GET['senha'] ?? '';
-if ($senha !== 'mtech-simulador-2026') {
+if ($senha !== '123') {
     http_response_code(403);
     echo json_encode(['ok' => false, 'erro' => 'Senha inválida']);
     exit;
@@ -83,9 +83,10 @@ if ($status === 'aprovado') {
     $obs = 'Pagamento via ' . $forma . ($transacao_id !== '' ? ' — Transação: ' . $transacao_id : '');
     $stmt = $conn->prepare("
         INSERT INTO os_orcamento_pagamentos
-        (id_orcamento, forma, valor, parcelas, status, data_pagamento, observacoes, id_usuario_registrou)
-        VALUES (?, ?, ?, 1, 'confirmado', NOW(), ?, 1)
+        (id_orcamento, forma, valor, parcelas, status, data_pagamento, observacoes, id_usuario_registrou, origem)
+        VALUES (?, ?, ?, 1, 'confirmado', NOW(), ?, 1, 'webhook')
     ");
+    $stmt->bind_param('isds', $o['id_orcamento'], $forma, $valor, $obs);
     $stmt->bind_param('isds', $o['id_orcamento'], $forma, $valor, $obs);
     $stmt->execute();
     $stmt->close();
@@ -102,12 +103,7 @@ if ($status === 'aprovado') {
                   WHERE id_os = {$id_os} AND status NOT IN ('concluida','cancelada')");
 
     $conn->close();
-    echo json_encode([
-        'ok' => true,
-        'msg' => 'Pagamento aprovado e orçamento liberado',
-        'id_orcamento' => $o['id_orcamento'],
-        'id_os' => $id_os
-    ]);
+    header('Location: simulador_banco.php?senha=123&msg=pagamento_aprovado');
     exit;
 }
 

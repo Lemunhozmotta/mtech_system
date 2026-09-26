@@ -12,17 +12,15 @@ require_once '_header.php';
 $usuarioLogado = usuarioLogado();
 $conn = conectar();
 
-// ===== PERMISSÃO: RH (5) NÃO ABRE OS =====
 $nivel = (int)$usuarioLogado['nivel'];
 if (!in_array($nivel, [1, 2, 3, 4])) {
     $conn->close();
     redirecionar('ordens.php?msg=sem_permissao');
 }
 
-// ===== MECÂNICO (3) NÃO ESCOLHE RESPONSÁVEL =====
 $souMecanico = ($nivel === 3);
 
-// ===== PRÉ-SELEÇÃO POR id_carro (vindo da ficha do carro) =====
+// ===== PRÉ-SELEÇÃO POR id_carro =====
 $id_carro_pre = (int)($_GET['id_carro'] ?? 0);
 $carro_pre = null;
 $cliente_pre_nome = '';

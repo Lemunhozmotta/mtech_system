@@ -62,10 +62,7 @@ $conn->close();
 
 $data_prev = $os['data_previsao'] ? date('Y-m-d', strtotime($os['data_previsao'])) : '';
 
-// Mecânico apontado NÃO pode trocar responsável
 $podeTrocarResponsavel = ($nivel !== 3) || !$estaApontado;
-
-// ===== AVISO PRA MECÂNICO APONTADO =====
 $avisoMecanico = ($nivel === 3 && $estaApontado);
 ?>
 

@@ -3,7 +3,7 @@
    M-TECH SYSTEM — NEGAR PEÇAS EM LOTE
    - Níveis 1 e 2
    - Marca todas como 'negada' com o mesmo motivo
-   - Atualiza status da OS
+   - Atualiza status da OS via atualizarStatusOSPorSolicitacoes()
    ========================================================= */
 
 require_once '../conexao.php';
@@ -46,37 +46,9 @@ foreach ($ids as $id_solic) {
     $stmt->close();
 }
 
-// Atualiza status da OS
+// ===== ATUALIZA STATUS DA OS =====
 atualizarStatusOSPorSolicitacoes($conn, $id_os);
 
 $conn->close();
 header('Location: ordens_ver.php?id=' . $id_os . '&msg=negadas');
 exit;
-
-function atualizarStatusOSPorSolicitacoes($conn, $id_os)
-{
-    $stmt = $conn->prepare("
-        SELECT COUNT(*) AS nao_resolvidas
-        FROM os_solicitacoes_peca
-        WHERE id_os = ? AND status IN ('pendente','aprovada_estoque','aprovada_compra')
-    ");
-    $stmt->bind_param('i', $id_os);
-    $stmt->execute();
-    $nao_resolvidas = (int)$stmt->get_result()->fetch_assoc()['nao_resolvidas'];
-    $stmt->close();
-
-    $stmt = $conn->prepare("SELECT status FROM ordens_servico WHERE id_os = ? LIMIT 1");
-    $stmt->bind_param('i', $id_os);
-    $stmt->execute();
-    $os_atual = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-
-    if (!$os_atual) return;
-    if (in_array($os_atual['status'], ['concluida', 'cancelada'])) return;
-
-    if ($nao_resolvidas > 0) {
-        $conn->query("UPDATE ordens_servico SET status = 'aguardando_peca' WHERE id_os = {$id_os}");
-    } else {
-        $conn->query("UPDATE ordens_servico SET status = 'em_andamento' WHERE id_os = {$id_os}");
-    }
-}

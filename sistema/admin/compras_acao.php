@@ -132,13 +132,16 @@ if ($acao === 'receber') {
             $stmt->close();
         } else {
             // Não existe → cria novo item
+            // Não existe → cria novo item
             $nome = $compra['nome_peca'];
-            $custo = $compra['valor_unitario'] ?? 0;
+            $custo = (float)($compra['valor_unitario'] ?? 0);
+            // Margem padrão de 80% sobre o custo (custo × 1.8). Ajustável depois em Estoque → Editar.
+            $venda_sugerida = round($custo * 1.8, 2);
             $stmt = $conn->prepare("
                 INSERT INTO estoque (nome, quantidade, quantidade_minima, valor_custo, valor_venda, ativo)
-                VALUES (?, ?, 0, ?, 0, 1)
+                VALUES (?, ?, 0, ?, ?, 1)
             ");
-            $stmt->bind_param('sid', $nome, $quantidade_recebida, $custo);
+            $stmt->bind_param('sidd', $nome, $quantidade_recebida, $custo, $venda_sugerida);
             $stmt->execute();
             $id_estoque = $conn->insert_id;
             $stmt->close();

@@ -69,32 +69,6 @@ while ($r = $res->fetch_assoc()) $cont[$r['status']] = (int)$r['total'];
 
 $conn->close();
 
-function nomeStatusOrc($s)
-{
-    return [
-        'rascunho'           => 'Rascunho',
-        'aguardando_revisao' => 'Aguardando Revisão',
-        'pronto_para_envio'  => 'Pronto pra Enviar',
-        'enviado'            => 'Enviado ao Cliente',
-        'aprovado'           => 'Aprovado',
-        'aprovado_parcial'   => 'Aprovado Parcial',
-        'recusado'           => 'Recusado',
-        'expirado'           => 'Expirado',
-    ][$s] ?? $s;
-}
-function classeStatusOrc($s)
-{
-    return [
-        'rascunho'           => 'admin-badge-info',
-        'aguardando_revisao' => 'admin-badge-alerta',
-        'pronto_para_envio'  => 'admin-badge-info',
-        'enviado'            => 'admin-badge-info',
-        'aprovado'           => 'admin-badge-sucesso',
-        'aprovado_parcial'   => 'admin-badge-alerta',
-        'recusado'           => 'admin-badge-erro',
-        'expirado'           => 'admin-badge-erro',
-    ][$s] ?? 'admin-badge-info';
-}
 ?>
 
 <h1 class="admin-titulo-pagina">Orçamentos</h1>

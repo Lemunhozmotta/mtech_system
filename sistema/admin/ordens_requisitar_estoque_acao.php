@@ -1,6 +1,9 @@
 <?php
 /* =========================================================
    M-TECH SYSTEM — REQUISITAR PEÇA DO ESTOQUE
+   - Níveis 1 e 2
+   - Aprova peça direto do estoque
+   - Atualiza status da OS via atualizarStatusOSPorSolicitacoes()
    ========================================================= */
 
 require_once '../conexao.php';
@@ -24,7 +27,7 @@ if ($id_solicitacao <= 0 || $id_estoque <= 0) {
 
 $conn = conectar();
 
-// Verifica estoque suficiente
+// ===== VERIFICA ESTOQUE SUFICIENTE =====
 $stmt = $conn->prepare("SELECT quantidade FROM estoque WHERE id_estoque = ? LIMIT 1");
 $stmt->bind_param('i', $id_estoque);
 $stmt->execute();
@@ -43,6 +46,7 @@ if (!$item || !$sol || (int)$item['quantidade'] < (int)$sol['quantidade']) {
     exit;
 }
 
+// ===== APROVA =====
 $stmt = $conn->prepare("
     UPDATE os_solicitacoes_peca
     SET status = 'aprovada_estoque',
@@ -55,6 +59,9 @@ $stmt = $conn->prepare("
 $stmt->bind_param('iii', $id_estoque, $idUsuario, $id_solicitacao);
 $stmt->execute();
 $stmt->close();
+
+// ===== ATUALIZA STATUS DA OS =====
+atualizarStatusOSPorSolicitacoes($conn, $id_os);
 
 $conn->close();
 header('Location: ordens_ver.php?id=' . $id_os . '&msg=requisitada');

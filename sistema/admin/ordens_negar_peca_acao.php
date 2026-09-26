@@ -1,6 +1,8 @@
 <?php
 /* =========================================================
    M-TECH SYSTEM — NEGAR SOLICITAÇÃO DE PEÇA (individual)
+   - Níveis 1 e 2
+   - Atualiza status da OS via atualizarStatusOSPorSolicitacoes()
    ========================================================= */
 
 require_once '../conexao.php';
@@ -35,6 +37,9 @@ $stmt = $conn->prepare("
 $stmt->bind_param('siii', $motivo, $idUsuario, $id_solicitacao, $id_os);
 $stmt->execute();
 $stmt->close();
+
+// ===== ATUALIZA STATUS DA OS =====
+atualizarStatusOSPorSolicitacoes($conn, $id_os);
 
 $conn->close();
 header('Location: ordens_ver.php?id=' . $id_os . '&msg=negada');

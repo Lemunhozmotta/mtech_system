@@ -87,32 +87,6 @@ $valor_total_pago = (float)$res->fetch_assoc()['total'];
 
 $conn->close();
 
-function nomeStatusPag($s)
-{
-    return [
-        'rascunho'           => 'Rascunho',
-        'aguardando_revisao' => 'Aguardando Revisão',
-        'pronto_para_envio'  => 'Pronto pra Enviar',
-        'enviado'            => 'Enviado (aguardando pagamento)',
-        'aprovado'           => 'Aprovado (aguardando pagamento)',
-        'aprovado_parcial'   => 'Aprovado Parcial',
-        'recusado'           => 'Recusado',
-        'expirado'           => 'Expirado',
-    ][$s] ?? $s;
-}
-function classeStatusPag($s)
-{
-    return [
-        'rascunho'           => 'admin-badge-info',
-        'aguardando_revisao' => 'admin-badge-alerta',
-        'pronto_para_envio'  => 'admin-badge-info',
-        'enviado'            => 'admin-badge-info',
-        'aprovado'           => 'admin-badge-alerta',
-        'aprovado_parcial'   => 'admin-badge-alerta',
-        'recusado'           => 'admin-badge-erro',
-        'expirado'           => 'admin-badge-erro',
-    ][$s] ?? 'admin-badge-info';
-}
 ?>
 
 <h1 class="admin-titulo-pagina">Pagamentos</h1>

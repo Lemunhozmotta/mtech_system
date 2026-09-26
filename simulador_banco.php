@@ -12,7 +12,7 @@
 
 require_once 'sistema/conexao.php';
 
-$senha_acesso = 'mtech-simulador-2026';
+$senha_acesso = '123';
 
 // Verifica senha via GET
 $senha = $_GET['senha'] ?? '';

@@ -1,6 +1,10 @@
 <?php
 /* =========================================================
    M-TECH SYSTEM — MANDAR PEÇA PRA COMPRA
+   - Níveis 1 e 2
+   - Cria registro em compras_solicitacoes
+   - Atualiza a solicitação do mecânico
+   - Atualiza status da OS via atualizarStatusOSPorSolicitacoes()
    ========================================================= */
 
 require_once '../conexao.php';
@@ -38,7 +42,7 @@ if (!$sp) {
 $nome_peca = $sp['nome_peca'];
 $quantidade = (float)$sp['quantidade'];
 
-// Cria a compra
+// ===== CRIA A COMPRA =====
 $stmt = $conn->prepare("
     INSERT INTO compras_solicitacoes
     (id_os, id_solicitacao_peca, id_usuario_solicitou, id_usuario_aprovou,
@@ -50,6 +54,7 @@ $stmt->execute();
 $id_compra = $conn->insert_id;
 $stmt->close();
 
+// ===== ATUALIZA A SOLICITAÇÃO =====
 $stmt = $conn->prepare("
     UPDATE os_solicitacoes_peca
     SET status = 'aprovada_compra',
@@ -62,6 +67,9 @@ $stmt = $conn->prepare("
 $stmt->bind_param('iii', $id_compra, $idUsuario, $id_solicitacao);
 $stmt->execute();
 $stmt->close();
+
+// ===== ATUALIZA STATUS DA OS =====
+atualizarStatusOSPorSolicitacoes($conn, $id_os);
 
 $conn->close();
 header('Location: ordens_ver.php?id=' . $id_os . '&msg=compra_aprovada');

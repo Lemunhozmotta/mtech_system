@@ -69,28 +69,6 @@ while ($r = $res->fetch_assoc()) $cont[$r['status']] = (int)$r['total'];
 
 $conn->close();
 
-function nomeStatusCompra($s)
-{
-    return [
-        'aguardando_aprovacao' => 'Aguardando Aprovação',
-        'aprovada'             => 'Aprovada',
-        'comprada'             => 'Comprada',
-        'recebida'             => 'Recebida',
-        'negada'               => 'Negada',
-        'cancelada'            => 'Cancelada',
-    ][$s] ?? $s;
-}
-function classeStatusCompra($s)
-{
-    return [
-        'aguardando_aprovacao' => 'admin-badge-info',
-        'aprovada'             => 'admin-badge-alerta',
-        'comprada'             => 'admin-badge-info',
-        'recebida'             => 'admin-badge-sucesso',
-        'negada'               => 'admin-badge-erro',
-        'cancelada'            => 'admin-badge-erro',
-    ][$s] ?? 'admin-badge-info';
-}
 ?>
 
 <h1 class="admin-titulo-pagina">Compras</h1>

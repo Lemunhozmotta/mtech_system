@@ -21,52 +21,6 @@ $id_orcamento = (int)($_POST['id_orcamento'] ?? 0);
 
 $conn = conectar();
 
-// =========================================================
-// HELPER: recalcular valores
-// =========================================================
-function recalcularOrcamento($conn, $id_orcamento)
-{
-    $stmt = $conn->prepare("SELECT valor_mao_obra, valor_desconto FROM os_orcamentos WHERE id_orcamento = ? LIMIT 1");
-    $stmt->bind_param('i', $id_orcamento);
-    $stmt->execute();
-    $o = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-
-    if (!$o) return;
-
-    $mao_obra = (float)$o['valor_mao_obra'];
-    $desconto = (float)$o['valor_desconto'];
-
-    // Soma itens (peças + serviços que foram adicionados como item)
-    $stmt = $conn->prepare("SELECT COALESCE(SUM(valor_total), 0) AS total FROM os_orcamento_itens
-                            WHERE id_orcamento = ? AND tipo = 'peca'");
-    $stmt->bind_param('i', $id_orcamento);
-    $stmt->execute();
-    $pecas = (float)$stmt->get_result()->fetch_assoc()['total'];
-    $stmt->close();
-
-    $stmt = $conn->prepare("SELECT COALESCE(SUM(valor_total), 0) AS total FROM os_orcamento_itens
-                            WHERE id_orcamento = ? AND tipo = 'servico'");
-    $stmt->bind_param('i', $id_orcamento);
-    $stmt->execute();
-    $servicos = (float)$stmt->get_result()->fetch_assoc()['total'];
-    $stmt->close();
-
-    $mao_obra_total = $mao_obra + $servicos;
-    $total = ($pecas + $mao_obra_total) - $desconto;
-    if ($total < 0) $total = 0;
-
-    $stmt = $conn->prepare("
-        UPDATE os_orcamentos
-        SET valor_pecas = ?,
-            valor_mao_obra = ?,
-            valor_total = ?
-        WHERE id_orcamento = ?
-    ");
-    $stmt->bind_param('dddi', $pecas, $mao_obra_total, $total, $id_orcamento);
-    $stmt->execute();
-    $stmt->close();
-}
 
 // =========================================================
 // SALVAR ITENS (edição inline + mão de obra + desconto + obs)

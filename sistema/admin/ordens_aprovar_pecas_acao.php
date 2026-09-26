@@ -5,7 +5,7 @@
    - Classifica automaticamente: estoque OU compra
    - Se estoque: marca 'aprovada_estoque'
    - Se compra: cria compras_solicitacoes + marca 'aprovada_compra'
-   - Atualiza status da OS conforme regra nova
+   - Atualiza status da OS via atualizarStatusOSPorSolicitacoes()
    ========================================================= */
 
 require_once '../conexao.php';
@@ -75,7 +75,6 @@ foreach ($ids as $id_solic) {
         $stmt->close();
     } else {
         // ===== NÃO TEM → CRIA COMPRA =====
-        // Primeiro: cria a compra
         $stmt = $conn->prepare("
             INSERT INTO compras_solicitacoes
             (id_os, id_solicitacao_peca, id_usuario_solicitou, id_usuario_aprovou,
@@ -95,7 +94,6 @@ foreach ($ids as $id_solic) {
         $id_compra = $conn->insert_id;
         $stmt->close();
 
-        // Agora atualiza a solicitação
         $stmt = $conn->prepare("
             UPDATE os_solicitacoes_peca
             SET status = 'aprovada_compra',
@@ -119,38 +117,3 @@ atualizarStatusOSPorSolicitacoes($conn, $id_os);
 $conn->close();
 header('Location: ordens_ver.php?id=' . $id_os . '&msg=aprovadas');
 exit;
-
-// =========================================================
-// FUNÇÃO: atualiza status da OS conforme as solicitações
-// Regra:
-//  - Se tem 'pendente' → OS fica 'em_andamento'
-//  - Se NÃO tem pendente E tem 'aprovada_estoque'/'aprovada_compra' → 'aguardando_peca'
-//  - Se todas resolvidas (entregue/negada) → 'em_andamento'
-// =========================================================
-function atualizarStatusOSPorSolicitacoes($conn, $id_os)
-{
-    $stmt = $conn->prepare("
-        SELECT COUNT(*) AS nao_resolvidas
-        FROM os_solicitacoes_peca
-        WHERE id_os = ? AND status IN ('pendente','aprovada_estoque','aprovada_compra')
-    ");
-    $stmt->bind_param('i', $id_os);
-    $stmt->execute();
-    $nao_resolvidas = (int)$stmt->get_result()->fetch_assoc()['nao_resolvidas'];
-    $stmt->close();
-
-    $stmt = $conn->prepare("SELECT status FROM ordens_servico WHERE id_os = ? LIMIT 1");
-    $stmt->bind_param('i', $id_os);
-    $stmt->execute();
-    $os_atual = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-
-    if (!$os_atual) return;
-    if (in_array($os_atual['status'], ['concluida', 'cancelada'])) return;
-
-    if ($nao_resolvidas > 0) {
-        $conn->query("UPDATE ordens_servico SET status = 'aguardando_peca' WHERE id_os = {$id_os}");
-    } else {
-        $conn->query("UPDATE ordens_servico SET status = 'em_andamento' WHERE id_os = {$id_os}");
-    }
-}
