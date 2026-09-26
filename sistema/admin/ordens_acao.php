@@ -37,7 +37,7 @@ if ($acao === 'cadastrar') {
         exit;
     }
 
-    // Mecânico responsável inicial
+    // ===== DEFINE O MECÂNICO RESPONSÁVEL =====
     if ($nivel === 3) {
         $id_mecanico_val = $idUsuario;
     } else {

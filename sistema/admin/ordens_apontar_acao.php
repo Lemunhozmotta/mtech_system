@@ -5,9 +5,9 @@
    - Mecânico (3): só se aponta em si mesmo
    - Admin (1) e Financeiro (2): apontam qualquer mecânico
    - 1 mecânico só pode estar em 1 OS por vez
-   - Apontar: muda status pra 'em_andamento'
-   - Desapontar: usa decidirStatusAposDesapontar()
-                 se tem peça pedida → 'aguardando_aprovacao'
+   - Apontar muda status pra 'em_andamento' (se estava 'aberta')
+   - Desapontar: usa decidirStatusAposDesapontar() — se tem solicitação não resolvida → 'aguardando_aprovacao'
+                 senão → 'em_andamento'
                  senão → 'em_andamento'
    ========================================================= */
 
@@ -35,7 +35,11 @@ $stmt->execute();
 $os = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-if (!$os || in_array($os['status'], ['concluida', 'cancelada', 'pronta', 'aguardando_retirada'])) {
+
+if (!$os || in_array($os['status'], ['concluida', 'cancelada', 'pronta', 'aguardando_retirada'])) 
+
+if (!$os || in_array($os['status'], ['concluida', 'cancelada'])) {
+
     $conn->close();
     header('Location: ordens_ver.php?id=' . $id_os . '&msg=sem_permissao');
     exit;
@@ -101,9 +105,14 @@ if ($acao === 'apontar') {
     }
     $stmt->close();
 
+
     // Status → em_andamento (se não estiver)
     $status_em_andamento = ['aberta', 'aguardando_peca', 'aguardando_aprovacao', 'aprovado'];
     if (in_array($os['status'], $status_em_andamento)) {
+
+    // Status → em_andamento
+    if ($os['status'] === 'aberta' || $os['status'] === 'aguardando_peca' || $os['status'] === 'aguardando_aprovacao') {
+
         $conn->query("UPDATE ordens_servico SET status = 'em_andamento' WHERE id_os = {$id_os}");
     }
 
@@ -146,9 +155,29 @@ if ($acao === 'desapontar') {
         exit;
     }
 
+
     // ===== DECIDE O PRÓXIMO STATUS =====
     $proximo_status = decidirStatusAposDesapontar($conn, $id_os);
     $conn->query("UPDATE ordens_servico SET status = '{$proximo_status}' WHERE id_os = {$id_os}");
+
+    // ===== CONTA SOLICITAÇÕES NÃO RESOLVIDAS =====
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) AS total FROM os_solicitacoes_peca
+        WHERE id_os = ? AND status IN ('pendente','aprovada_estoque','aprovada_compra')
+    ");
+    $stmt->bind_param('i', $id_os);
+    $stmt->execute();
+    $nao_resolvidas = (int)$stmt->get_result()->fetch_assoc()['total'];
+    $stmt->close();
+
+    // ===== APLICA O STATUS =====
+    if ($nao_resolvidas > 0) {
+        // Tem peça pedida/aprovada → OS aguarda aprovação do orçamento
+        $conn->query("UPDATE ordens_servico SET status = 'aguardando_aprovacao' WHERE id_os = {$id_os}");
+    } else {
+        $conn->query("UPDATE ordens_servico SET status = 'em_andamento' WHERE id_os = {$id_os}");
+    }
+
 
     $conn->close();
     header('Location: ordens_ver.php?id=' . $id_os . '&msg=desapontado');

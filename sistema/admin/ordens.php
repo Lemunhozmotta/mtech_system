@@ -39,15 +39,20 @@ $tipos = '';
 
 // ===== FILTROS =====
 if ($filtro === 'ativas') {
-    $sql .= " AND os.status IN ('aberta', 'em_andamento', 'aguardando_aprovacao', 'aprovado', 'aguardando_peca', 'em_execucao')";
+    $sql .= " AND os.status IN ('aberta', 'em_andamento', 'aguardando_aprovacao', 'orcamento_enviado', 'aprovado', 'aguardando_pagamento', 'aguardando_peca', 'em_execucao')";
 } elseif ($filtro === 'aberta') {
     $sql .= " AND os.status = 'aberta'";
 } elseif ($filtro === 'em_andamento') {
     $sql .= " AND os.status = 'em_andamento'";
 } elseif ($filtro === 'aguardando_aprovacao') {
     $sql .= " AND os.status = 'aguardando_aprovacao'";
-} elseif ($filtro === 'aprovado') {
-    $sql .= " AND os.status = 'aprovado'";
+    } elseif ($filtro === 'orcamento_enviado') {
+        $sql .= " AND os.status = 'orcamento_enviado'";
+    } elseif ($filtro === 'aprovado') {
+        $sql .= " AND os.status = 'aprovado'";
+    } elseif ($filtro === 'aguardando_pagamento') {
+        $sql .= " AND os.status = 'aguardando_pagamento'";
+    }
 } elseif ($filtro === 'aguardando_peca') {
     $sql .= " AND os.status = 'aguardando_peca'";
 } elseif ($filtro === 'em_execucao') {
@@ -82,21 +87,20 @@ $stmt->execute();
 $ordens = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// ===== CONTADORES =====
 $contadores = [
     'aberta'                => 0,
     'em_andamento'          => 0,
     'aguardando_aprovacao'  => 0,
+    'orcamento_enviado'     => 0,
     'aprovado'              => 0,
+    'aguardando_pagamento'  => 0,
     'aguardando_peca'       => 0,
     'em_execucao'           => 0,
     'pronta'                => 0,
-    'aguardando_pagamento'  => 0,
     'aguardando_retirada'   => 0,
     'concluida'             => 0,
     'cancelada'             => 0
 ];
-
 $res = $conn->query("SELECT status, COUNT(*) AS total FROM ordens_servico GROUP BY status");
 while ($row = $res->fetch_assoc()) {
     $contadores[$row['status']] = (int)$row['total'];
@@ -125,10 +129,10 @@ if (!empty($msg) && isset($mensagens[$msg])):
     $m = $mensagens[$msg];
     $icone = $m['tipo'] === 'sucesso' ? 'check-circle' : ($m['tipo'] === 'alerta' ? 'exclamation-circle' : 'times-circle');
 ?>
-    <div class="admin-alerta admin-alerta-<?php echo $m['tipo']; ?>">
-        <i class="fas fa-<?php echo $icone; ?>"></i>
-        <?php echo $m['texto']; ?>
-    </div>
+<div class="admin-alerta admin-alerta-<?php echo $m['tipo']; ?>">
+    <i class="fas fa-<?php echo $icone; ?>"></i>
+    <?php echo $m['texto']; ?>
+</div>
 <?php endif; ?>
 
 <!-- ===== CONTADORES ===== -->
@@ -148,10 +152,21 @@ if (!empty($msg) && isset($mensagens[$msg])):
         <div class="admin-card-resumo-valor"><?php echo $contadores['aguardando_aprovacao']; ?></div>
         <div class="admin-card-resumo-titulo">Aguardando Aprovação</div>
     </div>
+    <div class="admin-card-resumo" style="border-left-color: #4A90E2;">
+        <div class="admin-card-resumo-icone"><i class="fas fa-file-invoice-dollar"></i></div>
+        <div class="admin-card-resumo-valor"><?php echo $contadores['orcamento_enviado']; ?></div>
+        <div class="admin-card-resumo-titulo">Orçamento Enviado</div>
+    </div>
     <div class="admin-card-resumo verde">
         <div class="admin-card-resumo-icone"><i class="fas fa-check"></i></div>
         <div class="admin-card-resumo-valor"><?php echo $contadores['aprovado']; ?></div>
-        <div class="admin-card-resumo-titulo">Aprovada</div>
+        <div class="admin-card-resumo-titulo">Aprovado</div>
+    </div>
+    <div class="admin-card-resumo" style="border-left-color: #EBAF00;">
+        <div class="admin-card-resumo-icone"><i class="fas fa-money-bill-wave"></i></div>
+        <div class="admin-card-resumo-valor"><?php echo $contadores['aguardando_pagamento']; ?></div>
+        <div class="admin-card-resumo-titulo">Aguardando Pagamento</div>
+    </div>
     </div>
     <div class="admin-card-resumo" style="border-left-color: #D62D2D;">
         <div class="admin-card-resumo-icone"><i class="fas fa-hourglass-half"></i></div>
@@ -205,7 +220,11 @@ if (!empty($msg) && isset($mensagens[$msg])):
             </option>
             <option value="aguardando_aprovacao" <?php echo $filtro === 'aguardando_aprovacao' ? 'selected' : ''; ?>>
                 Aguardando Aprovação</option>
-            <option value="aprovado" <?php echo $filtro === 'aprovado' ? 'selected' : ''; ?>>Aprovada</option>
+            <option value="orcamento_enviado" <?php echo $filtro === 'orcamento_enviado' ? 'selected' : ''; ?>>Orçamento
+                Enviado</option>
+            <option value="aprovado" <?php echo $filtro === 'aprovado' ? 'selected' : ''; ?>>Aprovado</option>
+            <option value="aguardando_pagamento" <?php echo $filtro === 'aguardando_pagamento' ? 'selected' : ''; ?>>
+                Aguardando Pagamento</option>
             <option value="aguardando_peca" <?php echo $filtro === 'aguardando_peca' ? 'selected' : ''; ?>>Aguardando
                 Peça</option>
             <option value="em_execucao" <?php echo $filtro === 'em_execucao' ? 'selected' : ''; ?>>Em Execução</option>
@@ -231,17 +250,17 @@ if (!empty($msg) && isset($mensagens[$msg])):
     </div>
 
     <?php if (empty($ordens)): ?>
-        <div class="admin-vazio">
-            <i class="fas fa-clipboard-list"></i>
-            <p>Nenhuma OS encontrada.</p>
-            <small>
-                <?php if (!empty($busca)): ?>
-                    Tente outra busca ou <a href="ordens.php">limpe os filtros</a>.
-                <?php else: ?>
-                    Clique em <strong>"Nova OS"</strong> pra começar.
-                <?php endif; ?>
-            </small>
-        </div>
+    <div class="admin-vazio">
+        <i class="fas fa-clipboard-list"></i>
+        <p>Nenhuma OS encontrada.</p>
+        <small>
+            <?php if (!empty($busca)): ?>
+            Tente outra busca ou <a href="ordens.php">limpe os filtros</a>.
+            <?php else: ?>
+            Clique em <strong>"Nova OS"</strong> pra começar.
+            <?php endif; ?>
+        </small>
+    </div>
     <?php else: ?>
         <div style="overflow-x:auto;">
             <table class="admin-tabela">
@@ -307,13 +326,13 @@ if (!empty($msg) && isset($mensagens[$msg])):
 </div>
 
 <script>
-    (function() {
-        const filtro = document.getElementById('filtroOS');
-        const form = document.getElementById('formBuscaOS');
-        if (filtro && form) {
-            filtro.addEventListener('change', () => form.submit());
-        }
-    })();
+(function() {
+    const filtro = document.getElementById('filtroOS');
+    const form = document.getElementById('formBuscaOS');
+    if (filtro && form) {
+        filtro.addEventListener('change', () => form.submit());
+    }
+})();
 </script>
 
 <?php require_once '_footer.php'; ?>
